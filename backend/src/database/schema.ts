@@ -1,7 +1,7 @@
 import { varchar, unique } from "drizzle-orm/pg-core";
 import { timestamp } from "drizzle-orm/pg-core";
 import { pgTable } from "drizzle-orm/pg-core";
-import { pgEnum, uuid, text } from "drizzle-orm/pg-core";
+import { pgEnum, uuid, text , boolean} from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum('user_role', ['ADMIN', 'PROJECT_MANAGER', 'TEAM_MEMBER']);
 export const projectStatusEnum = pgEnum('project_status', ['ACTIVE', 'COMPLETED', 'ON_HOLD']);
@@ -27,6 +27,16 @@ export const users = pgTable('users', {
     avatarUrl: text("avatar_url"),
     createdAt: timestamp('created_At').defaultNow().notNull(),
     updatedAt: timestamp('updated_At').defaultNow().notNull()
+})
+
+export const refreshTokens = pgTable('refresh_tokens', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => users.id).notNull(),
+    token: text('token').notNull(),
+    isUsed: boolean('is_used').default(false).notNull(),
+    isRevoked: boolean('is_revoked').default(false).notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_At').defaultNow().notNull(),
 })
 
 // Projects table
@@ -83,6 +93,8 @@ export const activityLogs = pgTable('activity_logs', {
 // Export types of each schema
 export type TUser = typeof users.$inferSelect;
 
+export type TNewUser = typeof users.$inferInsert;
+
 export type TProject = typeof projects.$inferSelect;
 
 export type TProjectMember = typeof projectMembers.$inferSelect;
@@ -91,4 +103,5 @@ export type TTask = typeof tasks.$inferSelect;
 
 export type TActivityLog = typeof activityLogs.$inferSelect;
 
+export type TRole = typeof roleEnum;
 

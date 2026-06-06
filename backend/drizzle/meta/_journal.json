@@ -8,6 +8,20 @@
       "when": 1780656334550,
       "tag": "0000_marvelous_fenris",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780707455854,
+      "tag": "0001_happy_maestro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780709594359,
+      "tag": "0002_uneven_jimmy_woo",
+      "breakpoints": true
     }
   ]
 }

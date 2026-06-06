@@ -1,4 +1,10 @@
-import { ConflictException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { RegisterDto } from './dto/RegisterDto';
@@ -11,129 +17,147 @@ import { randomBytes } from 'crypto';
 
 @Injectable()
 export class AuthService {
-    constructor(
-        @Inject("DATABASE_TOKEN")
-        private readonly db: TPgDatabase,
-        private readonly jwtService: JwtService
-    ) { }
+  constructor(
+    @Inject('DATABASE_TOKEN')
+    private readonly db: TPgDatabase,
+    private readonly jwtService: JwtService,
+  ) {}
 
-    // Register new user
-    async register(dto: RegisterDto) {
+  // Register new user
+  async register(dto: RegisterDto) {
+    const [existingUser] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, dto.email));
 
-
-        const [existingUser] = await this.db.select().from(users).where(eq(users.email, dto.email));
-
-        if (existingUser) {
-            throw new ConflictException("Email already in use");
-        }
-
-        // Hash the password before storing it
-        const passwordHash = await bcrypt.hash(dto.password, 12);
-
-        const payload: TNewUser = {
-            name: dto.name,
-            email: dto.email,
-            passwordHash
-        }
-
-        const [newUser] = await this.db.insert(users).values(payload).returning() // return the newly created user
-
-        const { passwordHash: _pw, ...restData } = newUser;
-
-        return restData;
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
     }
 
-    async login(dto: LoginDto) {
-        const [user] = await this.db.select().from(users).where(eq(users.email, dto.email));
+    // Hash the password before storing it
+    const passwordHash = await bcrypt.hash(dto.password, 12);
 
-        const isPasswordValid = user ? await bcrypt.compare(dto.password, user.passwordHash) : false;
+    const payload: TNewUser = {
+      name: dto.name,
+      email: dto.email,
+      passwordHash,
+    };
 
-        if (!user || !isPasswordValid) {
-            throw new UnauthorizedException("Invalid credentials");
-        }
+    const [newUser] = await this.db.insert(users).values(payload).returning(); // return the newly created user
 
-        const payload: JwtPayload = {
-            name: user.name,
-            email: user.email,
-            role: user.role
-        }
+    const { passwordHash: _pw, ...restData } = newUser;
 
-        const accessToken = this.jwtService.sign(payload);
+    return restData;
+  }
 
-        // Generate a secure random refresh token
-        const refreshToken = randomBytes(64).toString('hex');
+  async login(dto: LoginDto) {
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, dto.email));
 
-        // Store the refresh token in the database
-        await this.db.insert(refreshTokens).values({
-            userId: user.id,
-            token: refreshToken,
-            // Set expiration to 7 days
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) 
-        })
+    const isPasswordValid = user
+      ? await bcrypt.compare(dto.password, user.passwordHash)
+      : false;
 
-        return {
-            accessToken,
-            refreshToken
-        };
+    if (!user || !isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    async refreshToken(oldToken: string) {
-        const [storedToken] = await this.db.select().from(refreshTokens).where(eq(refreshTokens.token, oldToken));
+    const payload: JwtPayload = {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
 
-        if (!storedToken || storedToken.isUsed || storedToken.isRevoked || storedToken.expiresAt < new Date()) {
-            throw new UnauthorizedException("Invalid credentials");
-        }
+    const accessToken = this.jwtService.sign(payload);
 
-        // Mark the old token as used
-        await this.db.update(refreshTokens).set({ isUsed: true }).where(eq(refreshTokens.id, storedToken.id));
-        
-        // Fetch the user associated with the refresh token
-        const [user] = await this.db.select().from(users).where(eq(users.id, storedToken.userId));
+    // Generate a secure random refresh token
+    const refreshToken = randomBytes(64).toString('hex');
 
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+    // Store the refresh token in the database
+    await this.db.insert(refreshTokens).values({
+      userId: user.id,
+      token: refreshToken,
+      // Set expiration to 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
 
-        const payload: JwtPayload = {
-            name: user.name,
-            email: user.email,
-            role: user.role
-        }
+    return {
+      accessToken,
+      refreshToken,
+    };
+  }
 
-        const accessToken = this.jwtService.sign(payload);
+  async refreshToken(oldToken: string) {
+    const [storedToken] = await this.db
+      .select()
+      .from(refreshTokens)
+      .where(eq(refreshTokens.token, oldToken));
 
-        // Generate a new refresh token
-        const newRefreshToken = randomBytes(64).toString('hex');
-
-        // Store the new refresh token in the database
-        await this.db.insert(refreshTokens).values({
-            userId: user.id,
-            token: newRefreshToken,
-            // Set expiration to 7 days
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) 
-        });
-
-        return {
-            accessToken,
-            refreshToken: newRefreshToken
-        };
+    if (
+      !storedToken ||
+      storedToken.isUsed ||
+      storedToken.isRevoked ||
+      storedToken.expiresAt < new Date()
+    ) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    async getProfile(userId: string) {
-        const [user] = await this.db
-            .select()
-            .from(users)
-            .where(eq(users.id, userId));
+    // Mark the old token as used
+    await this.db
+      .update(refreshTokens)
+      .set({ isUsed: true })
+      .where(eq(refreshTokens.id, storedToken.id));
 
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+    // Fetch the user associated with the refresh token
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, storedToken.userId));
 
-        // Strip password hash before returning
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { passwordHash: _pw, ...restData } = user;
-        return restData;
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
+    const payload: JwtPayload = {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
 
+    const accessToken = this.jwtService.sign(payload);
+
+    // Generate a new refresh token
+    const newRefreshToken = randomBytes(64).toString('hex');
+
+    // Store the new refresh token in the database
+    await this.db.insert(refreshTokens).values({
+      userId: user.id,
+      token: newRefreshToken,
+      // Set expiration to 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
+
+  async getProfile(userId: string) {
+    const [user] = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId));
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Strip password hash before returning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _pw, ...restData } = user;
+    return restData;
+  }
 }

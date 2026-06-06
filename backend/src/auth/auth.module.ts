@@ -6,24 +6,24 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 import { AuthService } from './auth.service';
 
 @Module({
-    imports: [
-        // Always use the same strategy (jwt) for all endpoints.
-        PassportModule.register({defaultStrategy: "jwt"}),
+  imports: [
+    // Always use the same strategy (jwt) for all endpoints.
+    PassportModule.register({ defaultStrategy: 'jwt' }),
 
-        JwtModule.registerAsync({
-            useFactory: (config: ConfigService) =>({
-                secret: config.get<string>("JWT_SECRET")!,
+    JwtModule.registerAsync({
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET')!,
 
-                signOptions: {
-                    // Tokens will expire after 15 minutes
-                    expiresIn: '15m'
-                }
-            }),
-            inject: [ConfigService]
-        })
-    ],
-    providers: [JwtStrategy, AuthService],
-    exports: [JwtStrategy, PassportModule],
-    controllers: []
+        signOptions: {
+          // Tokens will expire after 15 minutes
+          expiresIn: '15m',
+        },
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+  providers: [JwtStrategy, AuthService],
+  exports: [JwtStrategy, PassportModule],
+  controllers: [],
 })
 export class AuthModule {}

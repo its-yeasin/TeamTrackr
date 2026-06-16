@@ -15,7 +15,7 @@ async function bootstrap() {
     origin:
       process.env.NODE_ENV === 'production' ? process.env.CORS_ORIGIN : '*', // Allow all origins in development, restrict in production
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'], // Allow specific HTTP methods
-    allowedHeaders: 'Content-Type, Authorization', // Allow specific headers
+    allowedHeaders: ['Content-Type, Authorization', 'refresh-token'], // Allow specific headers
   });
 
   // Pipe to ensure only valid request body and transform necessary things to its type accordingly

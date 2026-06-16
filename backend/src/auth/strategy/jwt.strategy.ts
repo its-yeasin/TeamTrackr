@@ -5,6 +5,7 @@ import * as schema from '../../database/schema';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { TPgDatabase } from 'src/common/interfaces/db';
+import { DATABASE_TOKEN } from 'src/database/database.module';
 
 export type JwtPayload = {
   name: string;
@@ -16,7 +17,7 @@ export type JwtPayload = {
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     config: ConfigService,
-    @Inject('DATABASE_TOKEN')
+    @Inject(DATABASE_TOKEN)
     private readonly db: TPgDatabase,
   ) {
     super({

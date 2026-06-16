@@ -10,15 +10,16 @@ import type { TPgDatabase } from 'src/common/interfaces/db';
 import { RegisterDto } from './dto/RegisterDto';
 import { refreshTokens, TNewUser, users } from 'src/database/schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'node_modules/bcryptjs';
+import bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/LoginDto';
 import { JwtPayload } from './strategy/jwt.strategy';
 import { randomBytes } from 'crypto';
+import { DATABASE_TOKEN } from 'src/database/database.module';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject('DATABASE_TOKEN')
+    @Inject(DATABASE_TOKEN)
     private readonly db: TPgDatabase,
     private readonly jwtService: JwtService,
   ) {}

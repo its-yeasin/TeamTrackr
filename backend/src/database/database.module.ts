@@ -1,10 +1,10 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import postgres from 'postgres';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema';
 
-export const DATABASE_TOKEN = 'DATABASE';
+export const DATABASE_TOKEN = 'DATABASE_TOKEN';
 
 @Global() // this module can be used over the whole project
 @Module({

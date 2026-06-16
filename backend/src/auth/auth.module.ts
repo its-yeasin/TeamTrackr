@@ -4,7 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { AuthService } from './auth.service';
-import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { AuthController } from './auth.controller';
 
 @Module({
   imports: [
@@ -16,15 +16,15 @@ import { RefreshTokenGuard } from './guards/refresh-token.guard';
         secret: config.get<string>('JWT_SECRET')!,
 
         signOptions: {
-          // Tokens will expire after 15 minutes
-          expiresIn: '15m',
+          // Tokens will expire after 1 minute for testing purposes. Adjust as needed for production.
+          expiresIn: '1m',
         },
       }),
       inject: [ConfigService],
     }),
   ],
-  providers: [JwtStrategy, AuthService, RefreshTokenGuard],
-  exports: [JwtStrategy, PassportModule, RefreshTokenGuard],
-  controllers: [],
+  controllers: [AuthController],
+  providers: [JwtStrategy, AuthService],
+  exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}

@@ -4,6 +4,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategy/jwt.strategy';
 import { AuthService } from './auth.service';
+import { RefreshTokenGuard } from './guards/refresh-token.guard';
 
 @Module({
   imports: [
@@ -22,8 +23,8 @@ import { AuthService } from './auth.service';
       inject: [ConfigService],
     }),
   ],
-  providers: [JwtStrategy, AuthService],
-  exports: [JwtStrategy, PassportModule],
+  providers: [JwtStrategy, AuthService, RefreshTokenGuard],
+  exports: [JwtStrategy, PassportModule, RefreshTokenGuard],
   controllers: [],
 })
 export class AuthModule {}

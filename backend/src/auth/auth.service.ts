@@ -45,6 +45,7 @@ export class AuthService {
 
     const [newUser] = await this.db.insert(users).values(payload).returning(); // return the newly created user
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...restData } = newUser;
 
     return restData;

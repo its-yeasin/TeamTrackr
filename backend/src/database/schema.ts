@@ -125,6 +125,8 @@ export type TNewUser = typeof users.$inferInsert;
 
 export type TProject = typeof projects.$inferSelect;
 
+export type TNewProject = typeof projects.$inferInsert;
+
 export type TProjectMember = typeof projectMembers.$inferSelect;
 
 export type TTask = typeof tasks.$inferSelect;
@@ -132,3 +134,5 @@ export type TTask = typeof tasks.$inferSelect;
 export type TActivityLog = typeof activityLogs.$inferSelect;
 
 export type TRole = typeof roleEnum;
+
+export type TProjectStatus = typeof projectStatusEnum;

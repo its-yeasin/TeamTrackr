@@ -16,8 +16,8 @@ import { AuthController } from './auth.controller';
         secret: config.get<string>('JWT_SECRET')!,
 
         signOptions: {
-          // Tokens will expire after 15 minutes.
-          expiresIn: '15m',
+          // Tokens will expire after 1 hour.
+          expiresIn: '1h',
         },
       }),
       inject: [ConfigService],

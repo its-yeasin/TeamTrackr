@@ -2,8 +2,14 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import { ProjectCreateDto } from './dto/ProjectCreateDto';
-import { projects, TNewProject, TProject, users } from 'src/database/schema';
-import { eq } from 'drizzle-orm';
+import {
+  projectMembers,
+  projects,
+  TNewProject,
+  TProject,
+  users,
+} from 'src/database/schema';
+import { and, eq, inArray, isNull, or } from 'drizzle-orm';
 
 @Injectable()
 export class ProjectsService {
@@ -37,5 +43,29 @@ export class ProjectsService {
       .returning();
 
     return newProject;
+  }
+
+  // Get all projects
+  async getAllProjects(userId: string): Promise<TProject[]> {
+    const memberProjectIds = this.db
+      .select({
+        projectId: projectMembers.projectId,
+      })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId));
+
+    const allProjects = await this.db
+      .select()
+      .from(projects)
+      .where(
+        and(
+          isNull(projects.deletedAt),
+          or(
+            eq(projects.createdBy, userId),
+            inArray(projects.id, memberProjectIds),
+          ),
+        ),
+      );
+    return allProjects;
   }
 }

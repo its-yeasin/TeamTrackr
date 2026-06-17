@@ -8,11 +8,12 @@ import { Roles } from 'src/common/decorators/role.decorator';
 import { ROLES } from 'src/common/constants/roles';
 import { User } from 'src/common/decorators/user.decorator';
 
+@UseGuards(AuthGuard('jwt'))
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
+  @UseGuards(RoleGuard)
   @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
   @Post('create')
   async createProject(
@@ -23,10 +24,8 @@ export class ProjectsController {
     return project;
   }
 
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
   @Get()
-  getProjects() {
-    return 'This endpoint will return a list of projects for the authenticated user.';
+  async getAllProjects(@User() user: { id: string }) {
+    return await this.projectsService.getAllProjects(user.id);
   }
 }

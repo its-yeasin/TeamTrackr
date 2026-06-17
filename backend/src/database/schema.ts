@@ -1,7 +1,7 @@
 import { varchar, unique } from 'drizzle-orm/pg-core';
 import { timestamp } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
-import { pgEnum, uuid, text, boolean } from 'drizzle-orm/pg-core';
+import { pgEnum, uuid, text, boolean, index } from 'drizzle-orm/pg-core';
 
 export const roleEnum = pgEnum('user_role', [
   'ADMIN',
@@ -41,34 +41,48 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_At').defaultNow().notNull(),
 });
 
-export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id')
-    .references(() => users.id)
-    .notNull(),
-  token: text('token').notNull(),
-  isUsed: boolean('is_used').default(false).notNull(),
-  isRevoked: boolean('is_revoked').default(false).notNull(),
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_At').defaultNow().notNull(),
-});
+export const refreshTokens = pgTable(
+  'refresh_tokens',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .references(() => users.id)
+      .notNull(),
+    token: text('token').notNull(),
+    isUsed: boolean('is_used').default(false).notNull(),
+    isRevoked: boolean('is_revoked').default(false).notNull(),
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_At').defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index('rt_user_id_idx').on(table.userId),
+    tokenIdx: index('rt_token_idx').on(table.token),
+  }),
+);
 
 // Projects table
-export const projects = pgTable('projects', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
-  description: text('description').notNull(),
-  status: projectStatusEnum('status').default('ACTIVE').notNull(),
-  deadline: timestamp('deadline').notNull(),
-  createdBy: uuid('created_by')
-    .notNull()
-    .references(() => users.id),
-  createdAt: timestamp('created_At').defaultNow().notNull(),
-  updatedAt: timestamp('updated_At').defaultNow().notNull(),
-  deletedAt: timestamp('deleted_At'),
-});
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    name: varchar('name', { length: 255 }).notNull(),
+    description: text('description').notNull(),
+    status: projectStatusEnum('status').default('ACTIVE').notNull(),
+    deadline: timestamp('deadline').notNull(),
+    createdBy: uuid('created_by')
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp('created_At').defaultNow().notNull(),
+    updatedAt: timestamp('updated_At').defaultNow().notNull(),
+    deletedAt: timestamp('deleted_At'),
+  },
+  (table) => ({
+    createdByIdx: index('created_by_idx').on(table.createdBy),
+    deletedAtIdx: index('deleted_at_idx').on(table.deletedAt),
+  }),
+);
 
-// Project memebers table
+// Project members table
 export const projectMembers = pgTable(
   'project_members',
   {
@@ -83,28 +97,37 @@ export const projectMembers = pgTable(
   },
   (table) => ({
     projectUserUnique: unique().on(table.projectId, table.userId),
+    userIdIdx: index('pm_user_id_idx').on(table.userId),
   }),
 );
 
 // Tasks table
-export const tasks = pgTable('tasks', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  title: varchar('title', { length: 255 }).notNull(),
-  description: text('description').notNull(),
-  projectId: uuid('project_id')
-    .references(() => projects.id)
-    .notNull(),
-  assignedTo: uuid('assigned_to').references(() => users.id),
-  createdBy: uuid('created_by')
-    .references(() => users.id)
-    .notNull(),
-  priority: priorityEnum('priority').notNull(),
-  status: taskStatusEnum('status').default('TODO').notNull(),
-  dueDate: timestamp('due_date').notNull(),
-  createdAt: timestamp('created_At').defaultNow().notNull(),
-  updatedAt: timestamp('updated_At').defaultNow().notNull(),
-  deletedAt: timestamp('deleted_At'),
-});
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    title: varchar('title', { length: 255 }).notNull(),
+    description: text('description').notNull(),
+    projectId: uuid('project_id')
+      .references(() => projects.id)
+      .notNull(),
+    assignedTo: uuid('assigned_to').references(() => users.id),
+    createdBy: uuid('created_by')
+      .references(() => users.id)
+      .notNull(),
+    priority: priorityEnum('priority').notNull(),
+    status: taskStatusEnum('status').default('TODO').notNull(),
+    dueDate: timestamp('due_date').notNull(),
+    createdAt: timestamp('created_At').defaultNow().notNull(),
+    updatedAt: timestamp('updated_At').defaultNow().notNull(),
+    deletedAt: timestamp('deleted_At'),
+  },
+
+  (table) => ({
+    projectIdIdx: index('task_project_id_idx').on(table.projectId),
+    assignedToIdx: index('task_assigned_to_idx').on(table.assignedTo),
+  }),
+);
 
 // Activity logs table
 export const activityLogs = pgTable('activity_logs', {

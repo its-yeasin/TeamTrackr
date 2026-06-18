@@ -17,6 +17,7 @@ import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
 export class ProjectsService {
   constructor(@Inject(DATABASE_TOKEN) private readonly db: TPgDatabase) {}
 
+  // Create a new project
   async createProject(
     dto: ProjectCreateDto,
     userId: string,
@@ -38,6 +39,7 @@ export class ProjectsService {
     return newProject;
   }
 
+  // Update an existing project
   async updateProject(
     projectId: string,
     dto: ProjectUpdateDto,
@@ -114,5 +116,22 @@ export class ProjectsService {
         ),
       );
     return allProjects;
+  }
+
+  // Delete a project (soft delete)
+  async deleteProject(projectId: string): Promise<void> {
+    const [existingProject] = await this.db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId)));
+
+    if (!existingProject) {
+      throw new NotFoundException('Project not found');
+    }
+
+    await this.db
+      .update(projects)
+      .set({ deletedAt: new Date() })
+      .where(eq(projects.id, projectId));
   }
 }

@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -18,11 +20,12 @@ import { ROLES } from 'src/common/constants';
 import { User } from 'src/common/decorators/user.decorator';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
+import { PgUUID } from 'drizzle-orm/pg-core';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(private readonly projectsService: ProjectsService) { }
 
   @UseGuards(RoleGuard)
   @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
@@ -48,6 +51,15 @@ export class ProjectsController {
     );
     return updatedProject;
   }
+
+  @UseGuards(RoleGuard)
+  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
+  @Delete(':id')
+  async deleteProject(@Param('id', ParseUUIDPipe) projectId: string) {
+    await this.projectsService.deleteProject(projectId);
+    return { message: 'Project deleted successfully' };
+  }
+
 
   @Get()
   async getAllProjects(

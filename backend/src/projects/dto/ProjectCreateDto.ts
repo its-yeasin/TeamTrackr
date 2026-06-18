@@ -13,11 +13,11 @@ export class ProjectCreateDto {
   @IsNotEmpty({ message: 'Project name is required' })
   @MaxLength(255, { message: 'Name should not exceed 255 characters' })
   @Transform(({ value }: { value: string }) => value.trim())
-  name: string = '';
+  name: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Description is required' })
-  description: string = '';
+  description: string;
 
   @IsOptional()
   @IsIn(['ACTIVE', 'COMPLETED', 'ON_HOLD'], {
@@ -27,5 +27,5 @@ export class ProjectCreateDto {
 
   @IsDateString({}, { message: 'Deadline must be a valid date' })
   @IsNotEmpty({ message: 'Deadline is required' })
-  deadline: string = '';
+  deadline: string;
 }

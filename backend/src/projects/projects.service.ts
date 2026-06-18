@@ -7,11 +7,11 @@ import {
   projects,
   TNewProject,
   TProject,
-  users,
 } from 'src/database/schema';
 import { and, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { TProjectStatus } from 'src/common/constants';
+import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
 
 @Injectable()
 export class ProjectsService {
@@ -21,15 +21,6 @@ export class ProjectsService {
     dto: ProjectCreateDto,
     userId: string,
   ): Promise<TProject> {
-    const [user] = await this.db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId));
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
     const payload: TNewProject = {
       name: dto.name,
       description: dto.description,
@@ -45,6 +36,39 @@ export class ProjectsService {
       .returning();
 
     return newProject;
+  }
+
+  async updateProject(
+    projectId: string,
+    dto: ProjectUpdateDto,
+  ): Promise<TProject> {
+    const [existingProject] = await this.db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.id, projectId)));
+
+    if (!existingProject) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const payload: Partial<TNewProject> = {};
+
+    if (dto.name !== undefined) payload.name = dto.name;
+    if (dto.description !== undefined) payload.description = dto.description;
+    if (dto.status !== undefined) payload.status = dto.status;
+    if (dto.deadline !== undefined) payload.deadline = new Date(dto.deadline);
+
+    // Always update the updatedAt
+    payload.updatedAt = new Date();
+
+    // Store project data in the database
+    const [updatedProject] = await this.db
+      .update(projects)
+      .set(payload)
+      .where(eq(projects.id, projectId))
+      .returning();
+
+    return updatedProject;
   }
 
   // Get all projects

@@ -157,5 +157,3 @@ export type TTask = typeof tasks.$inferSelect;
 export type TActivityLog = typeof activityLogs.$inferSelect;
 
 export type TRole = typeof roleEnum;
-
-export type TProjectStatus = typeof projectStatusEnum;

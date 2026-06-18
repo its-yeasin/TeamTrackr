@@ -9,7 +9,9 @@ import {
   TProject,
   users,
 } from 'src/database/schema';
-import { and, eq, inArray, isNull, or } from 'drizzle-orm';
+import { and, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm';
+import { GetProjectDto } from './dto/GetProjectDto';
+import { TProjectStatus } from 'src/common/constants';
 
 @Injectable()
 export class ProjectsService {
@@ -46,7 +48,10 @@ export class ProjectsService {
   }
 
   // Get all projects
-  async getAllProjects(userId: string): Promise<TProject[]> {
+  async getAllProjects(
+    userId: string,
+    query: GetProjectDto,
+  ): Promise<TProject[]> {
     const memberProjectIds = this.db
       .select({
         projectId: projectMembers.projectId,
@@ -54,16 +59,34 @@ export class ProjectsService {
       .from(projectMembers)
       .where(eq(projectMembers.userId, userId));
 
+    const conditions = [isNull(projects.deletedAt)];
+
+    if (query.status) {
+      conditions.push(eq(projects.status, query.status as TProjectStatus));
+    }
+
+    if (query.search) {
+      conditions.push(ilike(projects.name, `%${query.search}%`));
+    }
+
+    if (query.deadlineFrom) {
+      conditions.push(gte(projects.deadline, new Date(query.deadlineFrom)));
+    }
+
+    if (query.deadlineTo) {
+      conditions.push(lte(projects.deadline, new Date(query.deadlineTo)));
+    }
+
     const allProjects = await this.db
       .select()
       .from(projects)
       .where(
         and(
-          isNull(projects.deletedAt),
           or(
             eq(projects.createdBy, userId),
             inArray(projects.id, memberProjectIds),
           ),
+          ...conditions,
         ),
       );
     return allProjects;

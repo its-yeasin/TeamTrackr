@@ -1,12 +1,13 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request } from 'express';
 import { ProjectCreateDto } from './dto/ProjectCreateDto';
 import { ProjectsService } from './projects.service';
 import { RoleGuard } from 'src/common/guards/role.guard';
 import { Roles } from 'src/common/decorators/role.decorator';
-import { ROLES } from 'src/common/constants/roles';
+import { ROLES } from 'src/common/constants';
 import { User } from 'src/common/decorators/user.decorator';
+import { GetProjectDto } from './dto/GetProjectDto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('projects')
@@ -25,7 +26,10 @@ export class ProjectsController {
   }
 
   @Get()
-  async getAllProjects(@User() user: { id: string }) {
-    return await this.projectsService.getAllProjects(user.id);
+  async getAllProjects(
+    @User() user: { id: string },
+    @Query() query: GetProjectDto,
+  ) {
+    return await this.projectsService.getAllProjects(user.id, query);
   }
 }

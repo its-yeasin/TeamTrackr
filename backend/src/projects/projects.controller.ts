@@ -11,7 +11,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import type { Request } from 'express';
 import { ProjectCreateDto } from './dto/ProjectCreateDto';
 import { ProjectsService } from './projects.service';
 import { RoleGuard } from 'src/common/guards/role.guard';
@@ -20,7 +19,6 @@ import { ROLES } from 'src/common/constants';
 import { User } from 'src/common/decorators/user.decorator';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
-import { PgUUID } from 'drizzle-orm/pg-core';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('projects')
@@ -42,7 +40,7 @@ export class ProjectsController {
   @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
   @Put(':id')
   async updateProject(
-    @Param('id') projectId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
     @Body() dto: ProjectUpdateDto,
   ) {
     const updatedProject = await this.projectsService.updateProject(

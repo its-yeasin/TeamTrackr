@@ -1,7 +1,6 @@
-import { varchar, unique } from 'drizzle-orm/pg-core';
 import { timestamp } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
-import { pgEnum, uuid, text, boolean, index } from 'drizzle-orm/pg-core';
+import { varchar, unique,pgEnum, uuid, text, boolean, index } from 'drizzle-orm/pg-core';
 
 export const roleEnum = pgEnum('user_role', [
   'ADMIN',
@@ -76,10 +75,10 @@ export const projects = pgTable(
     updatedAt: timestamp('updated_At').defaultNow().notNull(),
     deletedAt: timestamp('deleted_At'),
   },
-  (table) => ({
-    createdByIdx: index('created_by_idx').on(table.createdBy),
-    deletedAtIdx: index('deleted_at_idx').on(table.deletedAt),
-  }),
+  (table)=>[
+    index('project_created_by_idx').on(table.createdBy),
+    index('project_deleted_at_idx').on(table.deletedAt),
+  ]
 );
 
 // Project members table
@@ -95,10 +94,10 @@ export const projectMembers = pgTable(
       .notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
   },
-  (table) => ({
-    projectUserUnique: unique().on(table.projectId, table.userId),
-    userIdIdx: index('pm_user_id_idx').on(table.userId),
-  }),
+  (table)=> [
+    unique('project_user_unique').on(table.projectId, table.userId),
+    index('pm_user_id_idx').on(table.userId),
+  ]
 );
 
 // Tasks table
@@ -122,11 +121,10 @@ export const tasks = pgTable(
     updatedAt: timestamp('updated_At').defaultNow().notNull(),
     deletedAt: timestamp('deleted_At'),
   },
-
-  (table) => ({
-    projectIdIdx: index('task_project_id_idx').on(table.projectId),
-    assignedToIdx: index('task_assigned_to_idx').on(table.assignedTo),
-  }),
+  (table)=>[
+    index('task_project_id_idx').on(table.projectId),
+    index('task_assigned_to_idx').on(table.assignedTo),
+  ]
 );
 
 // Activity logs table

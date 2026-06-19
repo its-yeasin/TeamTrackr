@@ -1,22 +1,23 @@
 import { timestamp } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
 import { varchar, unique,pgEnum, uuid, text, boolean, index } from 'drizzle-orm/pg-core';
+import { PROJECT_STATUSES, ROLES, TASK_PRIORITIES, TASK_STATUSES } from 'src/common/constants';
 
 export const roleEnum = pgEnum('user_role', [
-  'ADMIN',
-  'PROJECT_MANAGER',
-  'TEAM_MEMBER',
+  ROLES.ADMIN,
+  ROLES.PROJECT_MANAGER,
+  ROLES.TEAM_MEMBER,
 ]);
 export const projectStatusEnum = pgEnum('project_status', [
-  'ACTIVE',
-  'COMPLETED',
-  'ON_HOLD',
+  PROJECT_STATUSES.ACTIVE,
+  PROJECT_STATUSES.COMPLETED,
+  PROJECT_STATUSES.ON_HOLD,
 ]);
-export const priorityEnum = pgEnum('task_priority', ['HIGH', 'MEDIUM', 'LOW']);
+export const priorityEnum = pgEnum('task_priority', [TASK_PRIORITIES.HIGH, TASK_PRIORITIES.MEDIUM, TASK_PRIORITIES.LOW]);
 export const taskStatusEnum = pgEnum('task_status', [
-  'TODO',
-  'IN_PROGRESS',
-  'COMPLETED',
+  TASK_STATUSES.TODO,
+  TASK_STATUSES.IN_PROGRESS,
+  TASK_STATUSES.COMPLETED,
 ]);
 export const entityTypeEnum = pgEnum('entity_type', ['PROJECT', 'TASK']);
 export const activityActionEnum = pgEnum('action', [

@@ -6,5 +6,6 @@ import { ProjectsController } from './projects.controller';
   imports: [],
   providers: [ProjectsService],
   controllers: [ProjectsController],
+  exports: [ProjectsService],
 })
 export class ProjectsModule {}

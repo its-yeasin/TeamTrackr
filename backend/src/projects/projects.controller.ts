@@ -65,4 +65,9 @@ export class ProjectsController {
   ) {
     return await this.projectsService.getAllProjects(user.id, query);
   }
+
+  @Get(':id')
+  async getProjectById(@Param('id', ParseUUIDPipe) projectId: string) {
+    return await this.projectsService.getProjectById(projectId);
+  }
 }

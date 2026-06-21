@@ -1,7 +1,20 @@
 import { timestamp } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
-import { varchar, unique,pgEnum, uuid, text, boolean, index } from 'drizzle-orm/pg-core';
-import { PROJECT_STATUSES, ROLES, TASK_PRIORITIES, TASK_STATUSES } from 'src/common/constants';
+import {
+  varchar,
+  unique,
+  pgEnum,
+  uuid,
+  text,
+  boolean,
+  index,
+} from 'drizzle-orm/pg-core';
+import {
+  PROJECT_STATUSES,
+  ROLES,
+  TASK_PRIORITIES,
+  TASK_STATUSES,
+} from 'src/common/constants';
 
 export const roleEnum = pgEnum('user_role', [
   ROLES.ADMIN,
@@ -13,7 +26,11 @@ export const projectStatusEnum = pgEnum('project_status', [
   PROJECT_STATUSES.COMPLETED,
   PROJECT_STATUSES.ON_HOLD,
 ]);
-export const priorityEnum = pgEnum('task_priority', [TASK_PRIORITIES.HIGH, TASK_PRIORITIES.MEDIUM, TASK_PRIORITIES.LOW]);
+export const priorityEnum = pgEnum('task_priority', [
+  TASK_PRIORITIES.HIGH,
+  TASK_PRIORITIES.MEDIUM,
+  TASK_PRIORITIES.LOW,
+]);
 export const taskStatusEnum = pgEnum('task_status', [
   TASK_STATUSES.TODO,
   TASK_STATUSES.IN_PROGRESS,
@@ -54,10 +71,11 @@ export const refreshTokens = pgTable(
     expiresAt: timestamp('expires_at').notNull(),
     createdAt: timestamp('created_At').defaultNow().notNull(),
   },
-  (table) => ({
-    userIdIdx: index('rt_user_id_idx').on(table.userId),
-    tokenIdx: index('rt_token_idx').on(table.token),
-  }),
+
+  (table) => [
+    index('rt_user_id_idx').on(table.userId),
+    index('rt_token_idx').on(table.token),
+  ],
 );
 
 // Projects table
@@ -76,10 +94,10 @@ export const projects = pgTable(
     updatedAt: timestamp('updated_At').defaultNow().notNull(),
     deletedAt: timestamp('deleted_At'),
   },
-  (table)=>[
+  (table) => [
     index('project_created_by_idx').on(table.createdBy),
     index('project_deleted_at_idx').on(table.deletedAt),
-  ]
+  ],
 );
 
 // Project members table
@@ -95,10 +113,10 @@ export const projectMembers = pgTable(
       .notNull(),
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
   },
-  (table)=> [
+  (table) => [
     unique('project_user_unique').on(table.projectId, table.userId),
     index('pm_user_id_idx').on(table.userId),
-  ]
+  ],
 );
 
 // Tasks table
@@ -122,10 +140,10 @@ export const tasks = pgTable(
     updatedAt: timestamp('updated_At').defaultNow().notNull(),
     deletedAt: timestamp('deleted_At'),
   },
-  (table)=>[
+  (table) => [
     index('task_project_id_idx').on(table.projectId),
     index('task_assigned_to_idx').on(table.assignedTo),
-  ]
+  ],
 );
 
 // Activity logs table

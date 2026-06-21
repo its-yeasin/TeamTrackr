@@ -169,7 +169,11 @@ export type TNewProject = typeof projects.$inferInsert;
 
 export type TProjectMember = typeof projectMembers.$inferSelect;
 
+export type TNewProjectMember = typeof projectMembers.$inferInsert;
+
 export type TTask = typeof tasks.$inferSelect;
+
+export type TNewTask = typeof tasks.$inferInsert;
 
 export type TActivityLog = typeof activityLogs.$inferSelect;
 

@@ -5,17 +5,13 @@ import { ProjectCreateDto } from './dto/ProjectCreateDto';
 import {
   projectMembers,
   projects,
-  tasks,
   TNewProject,
-  TNewTask,
   TProject,
-  users,
 } from 'src/database/schema';
 import { and, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { TProjectStatus } from 'src/common/constants';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
-import { TaskCreateDto } from 'src/tasks/dto/TaskCreateDto';
 
 @Injectable()
 export class ProjectsService {
@@ -151,46 +147,5 @@ export class ProjectsService {
       .update(projects)
       .set({ deletedAt: new Date() })
       .where(eq(projects.id, projectId));
-  }
-
-  // Create task for a specific project
-  async createTask(
-    projectId: string,
-    userId: string,
-    taskCreateDto: TaskCreateDto,
-  ) {
-    const [[existingProject], [existingUser]] = await Promise.all([
-      this.db
-        .select()
-        .from(projects)
-        .where(and(eq(projects.id, projectId), isNull(projects.deletedAt))),
-      this.db
-        .select()
-        .from(users)
-        .where(eq(users.id, taskCreateDto.assignedTo)),
-    ]);
-
-    if (!existingProject) {
-      throw new NotFoundException('Project not found');
-    }
-
-    if (!existingUser) {
-      throw new NotFoundException('Assigned user not found');
-    }
-
-    const payload: TNewTask = {
-      title: taskCreateDto.title,
-      description: taskCreateDto.description,
-      projectId,
-      assignedTo: taskCreateDto.assignedTo,
-      createdBy: userId,
-      priority: taskCreateDto.priority,
-      status: taskCreateDto.status,
-      dueDate: new Date(taskCreateDto.dueDate),
-    };
-
-    const [newTask] = await this.db.insert(tasks).values(payload).returning();
-
-    return newTask;
   }
 }

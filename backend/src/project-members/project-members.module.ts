@@ -7,5 +7,6 @@ import { ProjectMembersController } from './project-members.controller';
   imports: [ProjectsModule],
   providers: [ProjectMembersService],
   controllers: [ProjectMembersController],
+  exports: [ProjectMembersService],
 })
 export class ProjectMembersModule {}

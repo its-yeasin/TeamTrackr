@@ -98,11 +98,11 @@ export class ProjectMembersService {
       .where(eq(projectMembers.id, member.id));
   }
 
-  //   Check if a user is a member of a project
-  async isProjectMember(
+  //  get project member by userId and projectId
+  async getProjectMember(
     projectId: string,
     memberUserId: string,
-  ): Promise<boolean> {
+  ): Promise<TProjectMember> {
     const [member] = await this.db
       .select()
       .from(projectMembers)
@@ -113,7 +113,11 @@ export class ProjectMembersService {
         ),
       );
 
-    return !!member;
+    if (!member) {
+      throw new NotFoundException('Project member not found');
+    }
+
+    return member;
   }
 
   //   Get all members of a project

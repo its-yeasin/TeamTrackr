@@ -23,7 +23,7 @@ import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
 @UseGuards(AuthGuard('jwt'))
 @Controller('projects')
 export class ProjectsController {
-  constructor(private readonly projectsService: ProjectsService) { }
+  constructor(private readonly projectsService: ProjectsService) {}
 
   @UseGuards(RoleGuard)
   @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
@@ -57,7 +57,6 @@ export class ProjectsController {
     await this.projectsService.deleteProject(projectId);
     return { message: 'Project deleted successfully' };
   }
-
 
   @Get()
   async getAllProjects(

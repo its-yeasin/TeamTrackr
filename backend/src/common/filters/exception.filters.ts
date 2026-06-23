@@ -53,7 +53,7 @@ export class AllExceptionFilter implements ExceptionFilter {
       error: true,
       data: null,
       message,
-      ...(process.env.NODE_ENV === 'production' && {
+      ...(process.env.NODE_ENV !== 'production' && {
         stack: exception instanceof Error ? exception.stack : String(exception),
       }),
     };

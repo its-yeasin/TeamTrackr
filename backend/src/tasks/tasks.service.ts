@@ -108,11 +108,13 @@ export class TasksService {
   async createTask(projectId: string, userId: string, taskDto: TaskCreateDto) {
     const project = await this.projectsService.getProjectById(projectId);
 
+    // Validate task assignment and ensure title uniqueness
     const [member] = await Promise.all([
       this.validateTaskAssignment(projectId, taskDto.assignedTo),
       this.ensureTitleUnique(projectId, taskDto.title),
     ]);
 
+    // Due date can't be in the past
     this.validateDueDate(taskDto.dueDate);
 
     const payload: TNewTask = {
@@ -125,6 +127,7 @@ export class TasksService {
       ...(member ? { assignedTo: member.userId } : {}),
     };
 
+    // Insert the new task into the database and return the created task
     const [createdTask] = await this.db
       .insert(tasks)
       .values(payload)
@@ -139,11 +142,6 @@ export class TasksService {
     taskId: string,
     taskUpdateDto: TaskUpdateDto,
   ) {
-    // Ensure at least one field is provided for update
-    if (Object.keys(taskUpdateDto).length === 0) {
-      throw new BadRequestException('At least one field must be provided');
-    }
-
     const task = await this.getTaskById(taskId);
 
     if (task.projectId !== projectId) {

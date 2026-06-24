@@ -13,6 +13,7 @@ import { ProjectMembersService } from 'src/project-members/project-members.servi
 import { tasks, TNewTask, TProjectMember, TTask } from 'src/database/schema';
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
+import type { TTaskStatus } from 'src/common/constants';
 
 @Injectable()
 export class TasksService {
@@ -44,6 +45,21 @@ export class TasksService {
 
     if (dueDateObj < now) {
       throw new BadRequestException('Due date cannot be in the past');
+    }
+  }
+
+  // Validate status transition
+  private validateStatusTransition(current: TTaskStatus, next: TTaskStatus) {
+    const transitions: Record<TTaskStatus, TTaskStatus[]> = {
+      TODO: ['IN_PROGRESS'],
+      IN_PROGRESS: ['COMPLETED'],
+      COMPLETED: [],
+    };
+
+    if (!transitions[current].includes(next)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${current} to ${next}`,
+      );
     }
   }
 
@@ -137,18 +153,8 @@ export class TasksService {
   }
 
   // Update an existing task of a project
-  async updateTask(
-    projectId: string,
-    taskId: string,
-    taskUpdateDto: TaskUpdateDto,
-  ) {
+  async updateTask(taskId: string, taskUpdateDto: TaskUpdateDto) {
     const task = await this.getTaskById(taskId);
-
-    if (task.projectId !== projectId) {
-      throw new BadRequestException(
-        'Task does not belong to the specified project',
-      );
-    }
 
     // If title is being updated, ensure it's unique within the project
     await this.ensureTitleUnique(task.projectId, taskUpdateDto.title, taskId);
@@ -160,6 +166,7 @@ export class TasksService {
       title: taskUpdateDto.title,
       description: taskUpdateDto.description,
       priority: taskUpdateDto.priority,
+      updatedAt: new Date(),
       ...(taskUpdateDto.dueDate
         ? { dueDate: new Date(taskUpdateDto.dueDate) }
         : {}),
@@ -169,6 +176,26 @@ export class TasksService {
       .update(tasks)
       .set(payload)
       .where(and(eq(tasks.projectId, task.projectId), eq(tasks.id, taskId)))
+      .returning();
+
+    return this.mapTaskResponse(updatedTask);
+  }
+
+  // Update task status
+  async updateTaskStatus(taskId: string, status: TTaskStatus) {
+    // Ensure the task exists before updating its status
+    const task = await this.getTaskById(taskId);
+
+    // Validate the status transition TODO > IN_PROGRESS > COMPLETED
+    this.validateStatusTransition(task.status, status);
+
+    const [updatedTask] = await this.db
+      .update(tasks)
+      .set({
+        status,
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId))
       .returning();
 
     return this.mapTaskResponse(updatedTask);

@@ -13,7 +13,7 @@ import { ProjectMembersService } from 'src/project-members/project-members.servi
 import { tasks, TNewTask, TProjectMember, TTask } from 'src/database/schema';
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
-import type { TTaskStatus } from 'src/common/constants';
+import { TASK_STATUSES, type TTaskStatus } from 'src/common/constants';
 
 @Injectable()
 export class TasksService {
@@ -193,6 +193,37 @@ export class TasksService {
       .update(tasks)
       .set({
         status,
+        updatedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId))
+      .returning();
+
+    return this.mapTaskResponse(updatedTask);
+  }
+
+  // Assign a task to a project member
+  async assignTaskToMember(taskId: string, memberUserId: string) {
+    const task = await this.getTaskById(taskId);
+
+    if (task.status === TASK_STATUSES.COMPLETED) {
+      throw new BadRequestException('Cannot assign a completed task');
+    }
+
+    // Check user is a member of the project
+    const member = await this.validateTaskAssignment(
+      task.projectId,
+      memberUserId,
+    );
+
+    // Check already assigned to the same member
+    if (task.assignedTo === member.userId) {
+      throw new ConflictException('Task is already assigned to this member');
+    }
+
+    const [updatedTask] = await this.db
+      .update(tasks)
+      .set({
+        assignedTo: member.userId,
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, taskId))

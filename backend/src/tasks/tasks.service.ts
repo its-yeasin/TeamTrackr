@@ -209,16 +209,16 @@ export class TasksService {
       throw new BadRequestException('Cannot assign a completed task');
     }
 
+    // Check already assigned to the same member
+    if (task.assignedTo === memberUserId) {
+      throw new ConflictException('Task is already assigned to this member');
+    }
+
     // Check user is a member of the project
-    const member = await this.validateTaskAssignment(
+    const member = await this.projectMembersService.getProjectMember(
       task.projectId,
       memberUserId,
     );
-
-    // Check already assigned to the same member
-    if (task.assignedTo === member.userId) {
-      throw new ConflictException('Task is already assigned to this member');
-    }
 
     const [updatedTask] = await this.db
       .update(tasks)

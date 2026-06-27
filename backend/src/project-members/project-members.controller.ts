@@ -22,10 +22,10 @@ export class ProjectMembersController {
   //   Add a new project member
   @UseGuards(RoleGuard)
   @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
-  @Post()
+  @Post(':memberUserId')
   async addProjectMember(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Body('memberUserId', ParseUUIDPipe) memberUserId: string,
+    @Param('memberUserId', ParseUUIDPipe) memberUserId: string,
   ) {
     return this.projectMembersService.addProjectMember(projectId, memberUserId);
   }

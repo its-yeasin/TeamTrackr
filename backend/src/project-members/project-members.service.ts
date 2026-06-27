@@ -31,12 +31,16 @@ export class ProjectMembersService {
   ): Promise<TProjectMember> {
     const [[existingProject], [existingUser], [projectMember]] =
       await Promise.all([
+        // Check if the project exists and is not deleted
         this.db
           .select()
           .from(projects)
           .where(and(eq(projects.id, projectId), isNull(projects.deletedAt))),
+
+        // Check if the user exists
         this.db.select().from(users).where(eq(users.id, memberUserId)),
 
+        // Check if the user is already a member of the project
         this.db
           .select()
           .from(projectMembers)
@@ -127,6 +131,7 @@ export class ProjectMembersService {
     const members = await this.db
       .select({
         userId: users.id,
+        projectId: projectMembers.projectId,
         name: users.name,
         email: users.email,
         role: users.role,

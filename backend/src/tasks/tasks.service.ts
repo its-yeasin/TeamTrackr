@@ -13,7 +13,14 @@ import { ProjectMembersService } from 'src/project-members/project-members.servi
 import { tasks, TNewTask, TProjectMember, TTask } from 'src/database/schema';
 import { and, eq, isNull, ne } from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
-import { TASK_STATUSES, type TTaskStatus } from 'src/common/constants';
+import {
+  TASK_STATUSES,
+  type TUserRole,
+  type TTaskPriority,
+  type TTaskStatus,
+  ROLES,
+} from 'src/common/constants';
+import { GetTasksDto } from './dto/GetTasksDto';
 
 @Injectable()
 export class TasksService {
@@ -118,6 +125,48 @@ export class TasksService {
     }
 
     return task;
+  }
+
+  // Get all tasks
+  async getAllTasks(
+    user: {
+      id: string;
+      role: TUserRole;
+    },
+    query: GetTasksDto,
+  ): Promise<TTask[]> {
+    const conditions = [isNull(tasks.deletedAt)];
+
+    if (user.role !== ROLES.ADMIN) {
+      conditions.push(eq(tasks.assignedTo, user.id));
+    }
+
+    if (query.projectId) {
+      conditions.push(eq(tasks.projectId, query.projectId));
+    }
+
+    if (query.priority) {
+      conditions.push(eq(tasks.priority, query.priority as TTaskPriority));
+    }
+
+    if (query.status) {
+      conditions.push(eq(tasks.status, query.status as TTaskStatus));
+    }
+
+    if (query.dueDate) {
+      conditions.push(eq(tasks.dueDate, new Date(query.dueDate)));
+    }
+
+    if (query.createdAt) {
+      conditions.push(eq(tasks.createdAt, new Date(query.createdAt)));
+    }
+
+    const tasksList = await this.db
+      .select()
+      .from(tasks)
+      .where(and(...conditions));
+
+    return tasksList;
   }
 
   //   Create a new task of a project

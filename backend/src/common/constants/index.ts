@@ -5,6 +5,8 @@ export const ROLES = {
   TEAM_MEMBER: 'TEAM_MEMBER',
 } as const;
 
+export type TUserRole = (typeof ROLES)[keyof typeof ROLES];
+
 /* ==================Project Status================== */
 export const PROJECT_STATUSES = {
   ACTIVE: 'ACTIVE',

@@ -16,7 +16,7 @@ import { TasksService } from './tasks.service';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
 import { TaskStatusUpdateDto } from './dto/TaskStatusUpdateDto';
 import { User } from 'src/common/decorators/user.decorator';
-import { GetTasksDto } from './dto/GetTasksDto';
+import { TasksQueryDto } from './dto/TasksQueryDto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('tasks')
@@ -31,7 +31,7 @@ export class TasksController {
       id: string;
       role: TUserRole;
     },
-    @Query() query: GetTasksDto,
+    @Query() query: TasksQueryDto,
   ) {
     return await this.tasksService.getAllTasks(user, query);
   }

@@ -11,7 +11,18 @@ import { TaskCreateDto } from './dto/TaskCreateDto';
 import { ProjectsService } from 'src/projects/projects.service';
 import { ProjectMembersService } from 'src/project-members/project-members.service';
 import { tasks, TNewTask, TProjectMember, TTask } from 'src/database/schema';
-import { and, eq, isNull, ne } from 'drizzle-orm';
+import {
+  and,
+  asc,
+  count,
+  eq,
+  gte,
+  ilike,
+  isNull,
+  lte,
+  ne,
+  or,
+} from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
 import {
   TASK_STATUSES,
@@ -20,7 +31,8 @@ import {
   type TTaskStatus,
   ROLES,
 } from 'src/common/constants';
-import { GetTasksDto } from './dto/GetTasksDto';
+import { TasksQueryDto } from './dto/TasksQueryDto';
+import { TaskResponseDto } from './dto/TaskResponseDto';
 
 @Injectable()
 export class TasksService {
@@ -29,89 +41,6 @@ export class TasksService {
     private readonly projectsService: ProjectsService,
     private readonly projectMembersService: ProjectMembersService,
   ) {}
-
-  // Validate task assignment
-  private async validateTaskAssignment(
-    projectId: string,
-    assignedTo?: string,
-  ): Promise<TProjectMember | null> {
-    if (!assignedTo) return null;
-
-    return await this.projectMembersService.getProjectMember(
-      projectId,
-      assignedTo,
-    );
-  }
-
-  // Validate due date
-  private validateDueDate(dueDate: string): void {
-    if (!dueDate) return;
-
-    const dueDateObj = new Date(dueDate);
-    const now = new Date();
-
-    if (dueDateObj < now) {
-      throw new BadRequestException('Due date cannot be in the past');
-    }
-  }
-
-  // Validate status transition
-  private validateStatusTransition(current: TTaskStatus, next: TTaskStatus) {
-    const transitions: Record<TTaskStatus, TTaskStatus[]> = {
-      TODO: ['IN_PROGRESS'],
-      IN_PROGRESS: ['COMPLETED'],
-      COMPLETED: [],
-    };
-
-    if (!transitions[current].includes(next)) {
-      throw new BadRequestException(
-        `Invalid status transition from ${current} to ${next}`,
-      );
-    }
-  }
-
-  // task return mapping function
-  private mapTaskResponse(task: TTask) {
-    return {
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      projectId: task.projectId,
-      assignedTo: task.assignedTo,
-      priority: task.priority,
-      status: task.status,
-      dueDate: task.dueDate,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-    };
-  }
-
-  // Ensure task title is unique within the project
-  private async ensureTitleUnique(
-    projectId: string,
-    title: string,
-    excludeTaskId?: string,
-  ): Promise<void> {
-    if (!title) return;
-
-    const [existingTask] = await this.db
-      .select()
-      .from(tasks)
-      .where(
-        and(
-          eq(tasks.projectId, projectId),
-          eq(tasks.title, title),
-          isNull(tasks.deletedAt),
-          excludeTaskId ? ne(tasks.id, excludeTaskId) : undefined,
-        ),
-      );
-
-    if (existingTask) {
-      throw new ConflictException(
-        'A task with the same title already exists in this project',
-      );
-    }
-  }
 
   // Get Task by ID
   async getTaskById(taskId: string): Promise<TTask> {
@@ -133,12 +62,28 @@ export class TasksService {
       id: string;
       role: TUserRole;
     },
-    query: GetTasksDto,
-  ): Promise<TTask[]> {
+    query: TasksQueryDto,
+  ): Promise<TaskResponseDto> {
+    const page = Math.max(query.page ?? 1, 1); // Ensure page is at least 1
+    const limit = Math.min(Math.max(query.limit ?? 30, 1), 100); // Ensure limit is between 1 and 100
+
     const conditions = [isNull(tasks.deletedAt)];
 
-    if (user.role !== ROLES.ADMIN) {
+    if (user.role === ROLES.TEAM_MEMBER) {
       conditions.push(eq(tasks.assignedTo, user.id));
+    }
+
+    if (query.search) {
+      conditions.push(
+        or(
+          ilike(tasks.title, `%${query.search}%`),
+          ilike(tasks.description, `%${query.search}%`),
+        ),
+      );
+    }
+
+    if (query.assignedTo) {
+      conditions.push(eq(tasks.assignedTo, query.assignedTo));
     }
 
     if (query.projectId) {
@@ -153,20 +98,58 @@ export class TasksService {
       conditions.push(eq(tasks.status, query.status as TTaskStatus));
     }
 
-    if (query.dueDate) {
-      conditions.push(eq(tasks.dueDate, new Date(query.dueDate)));
+    if (query.dueFrom) {
+      conditions.push(gte(tasks.dueDate, new Date(query.dueFrom)));
     }
 
-    if (query.createdAt) {
-      conditions.push(eq(tasks.createdAt, new Date(query.createdAt)));
+    if (query.dueTo) {
+      conditions.push(lte(tasks.dueDate, new Date(query.dueTo)));
     }
 
-    const tasksList = await this.db
-      .select()
-      .from(tasks)
-      .where(and(...conditions));
+    if (query.createdFrom) {
+      conditions.push(gte(tasks.createdAt, new Date(query.createdFrom)));
+    }
 
-    return tasksList;
+    if (query.createdTo) {
+      conditions.push(lte(tasks.createdAt, new Date(query.createdTo)));
+    }
+
+    const [tasksList, [{ totalCount }]] = await Promise.all([
+      this.db
+        .select({
+          id: tasks.id,
+          title: tasks.title,
+          description: tasks.description,
+          projectId: tasks.projectId,
+          assignedTo: tasks.assignedTo,
+          priority: tasks.priority,
+          status: tasks.status,
+          dueDate: tasks.dueDate,
+          createdAt: tasks.createdAt,
+          updatedAt: tasks.updatedAt,
+        })
+        .from(tasks)
+        .where(and(...conditions))
+        .orderBy(asc(tasks.dueDate))
+        .limit(limit)
+        .offset((page - 1) * limit),
+      this.db
+        .select({
+          totalCount: count(),
+        })
+        .from(tasks)
+        .where(and(...conditions)),
+    ]);
+
+    return {
+      data: tasksList,
+      pagination: {
+        page,
+        limit,
+        total: Number(totalCount),
+        totalPages: Math.ceil(Number(totalCount) / limit),
+      },
+    };
   }
 
   //   Create a new task of a project
@@ -279,5 +262,89 @@ export class TasksService {
       .returning();
 
     return this.mapTaskResponse(updatedTask);
+  }
+
+  /* -------Helper classes----- */
+  // Validate task assignment
+  private async validateTaskAssignment(
+    projectId: string,
+    assignedTo?: string,
+  ): Promise<TProjectMember | null> {
+    if (!assignedTo) return null;
+
+    return await this.projectMembersService.getProjectMember(
+      projectId,
+      assignedTo,
+    );
+  }
+
+  // Validate due date
+  private validateDueDate(dueDate: string): void {
+    if (!dueDate) return;
+
+    const dueDateObj = new Date(dueDate);
+    const now = new Date();
+
+    if (dueDateObj < now) {
+      throw new BadRequestException('Due date cannot be in the past');
+    }
+  }
+
+  // Validate status transition
+  private validateStatusTransition(current: TTaskStatus, next: TTaskStatus) {
+    const transitions: Record<TTaskStatus, TTaskStatus[]> = {
+      TODO: ['IN_PROGRESS'],
+      IN_PROGRESS: ['COMPLETED'],
+      COMPLETED: [],
+    };
+
+    if (!transitions[current].includes(next)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${current} to ${next}`,
+      );
+    }
+  }
+
+  // task return mapping function
+  private mapTaskResponse(task: TTask) {
+    return {
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      projectId: task.projectId,
+      assignedTo: task.assignedTo,
+      priority: task.priority,
+      status: task.status,
+      dueDate: task.dueDate,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    };
+  }
+
+  // Ensure task title is unique within the project
+  private async ensureTitleUnique(
+    projectId: string,
+    title: string,
+    excludeTaskId?: string,
+  ): Promise<void> {
+    if (!title) return;
+
+    const [existingTask] = await this.db
+      .select()
+      .from(tasks)
+      .where(
+        and(
+          eq(tasks.projectId, projectId),
+          eq(tasks.title, title),
+          isNull(tasks.deletedAt),
+          excludeTaskId ? ne(tasks.id, excludeTaskId) : undefined,
+        ),
+      );
+
+    if (existingTask) {
+      throw new ConflictException(
+        'A task with the same title already exists in this project',
+      );
+    }
   }
 }

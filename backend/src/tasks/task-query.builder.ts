@@ -30,7 +30,7 @@ export class TaskQueryBuilder {
   private conditions: SQL[] = [isNull(tasks.deletedAt)];
 
   // Check the visibility of tasks based on the user's role
-  visibilityFilter(): void {
+  private visibilityFilter(): void {
     if (this.user.role === ROLES.ADMIN) {
       return;
     }
@@ -45,7 +45,7 @@ export class TaskQueryBuilder {
   }
 
   // Build the query conditions based on the provided query parameters
-  queryFilter(): void {
+  private queryFilter(): void {
     if (this.query.search) {
       this.conditions.push(
         or(

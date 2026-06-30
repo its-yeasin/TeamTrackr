@@ -11,28 +11,16 @@ import { TaskCreateDto } from './dto/TaskCreateDto';
 import { ProjectsService } from 'src/projects/projects.service';
 import { ProjectMembersService } from 'src/project-members/project-members.service';
 import { tasks, TNewTask, TProjectMember, TTask } from 'src/database/schema';
-import {
-  and,
-  asc,
-  count,
-  eq,
-  gte,
-  ilike,
-  isNull,
-  lte,
-  ne,
-  or,
-} from 'drizzle-orm';
+import { and, asc, count, eq, isNull, ne } from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
 import {
   TASK_STATUSES,
   type TUserRole,
-  type TTaskPriority,
   type TTaskStatus,
-  ROLES,
 } from 'src/common/constants';
 import { TasksQueryDto } from './dto/TasksQueryDto';
 import { TaskResponseDto } from './dto/TaskResponseDto';
+import { TaskQueryBuilder } from './task-query.builder';
 
 @Injectable()
 export class TasksService {
@@ -67,52 +55,7 @@ export class TasksService {
     const page = Math.max(query.page ?? 1, 1); // Ensure page is at least 1
     const limit = Math.min(Math.max(query.limit ?? 30, 1), 100); // Ensure limit is between 1 and 100
 
-    const conditions = [isNull(tasks.deletedAt)];
-
-    if (user.role === ROLES.TEAM_MEMBER) {
-      conditions.push(eq(tasks.assignedTo, user.id));
-    }
-
-    if (query.search) {
-      conditions.push(
-        or(
-          ilike(tasks.title, `%${query.search}%`),
-          ilike(tasks.description, `%${query.search}%`),
-        ),
-      );
-    }
-
-    if (query.assignedTo) {
-      conditions.push(eq(tasks.assignedTo, query.assignedTo));
-    }
-
-    if (query.projectId) {
-      conditions.push(eq(tasks.projectId, query.projectId));
-    }
-
-    if (query.priority) {
-      conditions.push(eq(tasks.priority, query.priority as TTaskPriority));
-    }
-
-    if (query.status) {
-      conditions.push(eq(tasks.status, query.status as TTaskStatus));
-    }
-
-    if (query.dueFrom) {
-      conditions.push(gte(tasks.dueDate, new Date(query.dueFrom)));
-    }
-
-    if (query.dueTo) {
-      conditions.push(lte(tasks.dueDate, new Date(query.dueTo)));
-    }
-
-    if (query.createdFrom) {
-      conditions.push(gte(tasks.createdAt, new Date(query.createdFrom)));
-    }
-
-    if (query.createdTo) {
-      conditions.push(lte(tasks.createdAt, new Date(query.createdTo)));
-    }
+    const whereClause = new TaskQueryBuilder(user, query, this.db).build();
 
     const [tasksList, [{ totalCount }]] = await Promise.all([
       this.db
@@ -129,7 +72,7 @@ export class TasksService {
           updatedAt: tasks.updatedAt,
         })
         .from(tasks)
-        .where(and(...conditions))
+        .where(whereClause)
         .orderBy(asc(tasks.dueDate))
         .limit(limit)
         .offset((page - 1) * limit),
@@ -138,7 +81,7 @@ export class TasksService {
           totalCount: count(),
         })
         .from(tasks)
-        .where(and(...conditions)),
+        .where(whereClause),
     ]);
 
     return {

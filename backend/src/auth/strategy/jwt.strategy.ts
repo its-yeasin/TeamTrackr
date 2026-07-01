@@ -6,11 +6,12 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
+import { TUserRole } from 'src/common/constants';
 
 export type JwtPayload = {
   name: string;
   email: string;
-  role: string;
+  role: TUserRole;
 };
 
 @Injectable()
@@ -24,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       // Extract the JWT from the Authorization header as a Bearer token
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false, // Ensure expired tokens are rejected
-      secretOrKey: config.get<string>('JWT_SECRET')!,
+      secretOrKey: config.get<string>('JWT_SECRET'),
     });
   }
 

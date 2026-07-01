@@ -13,11 +13,11 @@ import { AuthController } from './auth.controller';
 
     JwtModule.registerAsync({
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET')!,
+        secret: config.get<string>('JWT_SECRET'),
 
         signOptions: {
-          // Tokens will expire after 1 hour.
-          expiresIn: '1h',
+          // Tokens will expire after 1 day.
+          expiresIn: '1d',
         },
       }),
       inject: [ConfigService],

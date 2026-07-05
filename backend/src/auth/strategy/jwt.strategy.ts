@@ -6,12 +6,13 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
-import { TUserRole } from 'src/common/constants';
+import { TSystemRole } from 'src/common/constants';
 
 export type JwtPayload = {
+  id: string;
   name: string;
   email: string;
-  role: TUserRole;
+  role: TSystemRole;
 };
 
 @Injectable()

@@ -6,6 +6,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { TasksModule } from './tasks/tasks.module';
 import { ProjectMembersModule } from './project-members/project-members.module';
 import { UsersModule } from './users/users.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './users/users.module';
     TasksModule,
     ProjectMembersModule,
     UsersModule,
+    PermissionsModule,
   ],
 })
 export class AppModule {}

@@ -10,10 +10,10 @@ import {
   SQL,
 } from 'drizzle-orm';
 import {
-  ROLES,
+  SYSTEM_ROLES,
   type TTaskPriority,
   type TTaskStatus,
-  type TUserRole,
+  type TSystemRole,
 } from 'src/common/constants';
 import { TasksQueryDto } from './dto/TasksQueryDto';
 import { projectMembers, tasks } from 'src/database/schema';
@@ -21,7 +21,7 @@ import { TPgDatabase } from 'src/common/interfaces/db';
 
 export class TaskQueryBuilder {
   constructor(
-    private readonly user: { id: string; role: TUserRole },
+    private readonly user: { id: string; role: TSystemRole },
     private readonly query: TasksQueryDto,
     private readonly db: TPgDatabase,
   ) {}
@@ -31,7 +31,7 @@ export class TaskQueryBuilder {
 
   // Check the visibility of tasks based on the user's role
   private visibilityFilter(): void {
-    if (this.user.role === ROLES.ADMIN) {
+    if (this.user.role === SYSTEM_ROLES.ADMIN) {
       return;
     }
 

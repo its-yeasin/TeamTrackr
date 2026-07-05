@@ -15,7 +15,7 @@ import { and, asc, count, eq, isNull, ne } from 'drizzle-orm';
 import { TaskUpdateDto } from './dto/TaskUpdateDto';
 import {
   TASK_STATUSES,
-  type TUserRole,
+  type TSystemRole,
   type TTaskStatus,
 } from 'src/common/constants';
 import { TasksQueryDto } from './dto/TasksQueryDto';
@@ -48,7 +48,7 @@ export class TasksService {
   async getAllTasks(
     user: {
       id: string;
-      role: TUserRole;
+      role: TSystemRole;
     },
     query: TasksQueryDto,
   ): Promise<TaskResponseDto> {

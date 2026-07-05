@@ -1,11 +1,15 @@
-/* ==================User Roles================== */
-export const ROLES = {
-  ADMIN: 'ADMIN',
-  PROJECT_MANAGER: 'PROJECT_MANAGER',
-  TEAM_MEMBER: 'TEAM_MEMBER',
+export const USER_STATUS = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
 } as const;
 
-export type TUserRole = (typeof ROLES)[keyof typeof ROLES];
+/* ==================System Roles================== */
+export const SYSTEM_ROLES = {
+  ADMIN: 'ADMIN',
+  USER: 'USER',
+} as const;
+
+export type TSystemRole = (typeof SYSTEM_ROLES)[keyof typeof SYSTEM_ROLES];
 
 /* ==================Project Status================== */
 export const PROJECT_STATUSES = {

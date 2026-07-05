@@ -4,18 +4,18 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import {
   projectMembers,
-  projects,
   TNewProjectMember,
   TProjectMember,
   users,
 } from 'src/database/schema';
 import { ProjectsService } from 'src/projects/projects.service';
 import { GetProjectMembersDto } from './dto/GetProjectMembersDto';
+import { ProjectMemberAddDto } from './dto/ProjectMemberAddDto';
 
 @Injectable()
 export class ProjectMembersService {
@@ -27,34 +27,26 @@ export class ProjectMembersService {
   //  Add a new project member
   async addProjectMember(
     projectId: string,
-    memberUserId: string,
+    memberAddDto: ProjectMemberAddDto,
   ): Promise<TProjectMember> {
-    const [[existingProject], [existingUser], [projectMember]] =
-      await Promise.all([
-        // Check if the project exists and is not deleted
-        this.db
-          .select()
-          .from(projects)
-          .where(and(eq(projects.id, projectId), isNull(projects.deletedAt))),
+    const [, [existingUser], [projectMember]] = await Promise.all([
+      // Check if the project exists and is not deleted
+      this.projectsService.getProjectById(projectId),
 
-        // Check if the user exists
-        this.db.select().from(users).where(eq(users.id, memberUserId)),
+      // Check if the user already exists
+      this.db.select().from(users).where(eq(users.id, memberAddDto.userId)),
 
-        // Check if the user is already a member of the project
-        this.db
-          .select()
-          .from(projectMembers)
-          .where(
-            and(
-              eq(projectMembers.projectId, projectId),
-              eq(projectMembers.userId, memberUserId),
-            ),
+      // Check if the user is already a member of the project
+      this.db
+        .select()
+        .from(projectMembers)
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, memberAddDto.userId),
           ),
-      ]);
-
-    if (!existingProject) {
-      throw new NotFoundException('Project not found or has been deleted');
-    }
+        ),
+    ]);
 
     if (!existingUser) {
       throw new NotFoundException('User not found');
@@ -65,9 +57,9 @@ export class ProjectMembersService {
     }
 
     const payload: TNewProjectMember = {
-      projectId: existingProject.id,
-      userId: existingUser.id,
-      joinedAt: new Date(),
+      projectId: projectId,
+      userId: memberAddDto.userId,
+      roleId: memberAddDto.roleId,
     };
 
     const [newProjectMember] = await this.db

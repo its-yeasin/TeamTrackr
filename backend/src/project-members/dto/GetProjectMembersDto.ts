@@ -1,12 +1,10 @@
 import {
   IsDateString,
   IsEmail,
-  IsIn,
   IsOptional,
   IsString,
   IsUUID,
 } from 'class-validator';
-import { roleEnum } from 'src/database/schema';
 
 export class GetProjectMembersDto {
   @IsOptional()
@@ -22,9 +20,7 @@ export class GetProjectMembersDto {
   email: string;
 
   @IsOptional()
-  @IsIn(roleEnum.enumValues, {
-    message: `Role must be one of the following: ${roleEnum.enumValues.join(', ')}`,
-  })
+  @IsString()
   role: string;
 
   @IsOptional()

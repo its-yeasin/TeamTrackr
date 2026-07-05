@@ -1,11 +1,11 @@
 import { IsNotEmpty, IsUUID } from 'class-validator';
 
-export class ProjectMemberCreateDto {
-  @IsNotEmpty({ message: 'Project is required' })
-  @IsUUID()
-  projectId: string;
-
+export class ProjectMemberAddDto {
   @IsNotEmpty({ message: 'User is required' })
   @IsUUID()
   userId: string;
+
+  @IsNotEmpty({ message: 'Role is required' })
+  @IsUUID()
+  roleId: string;
 }

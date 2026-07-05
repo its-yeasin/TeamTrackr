@@ -13,20 +13,19 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ProjectCreateDto } from './dto/ProjectCreateDto';
 import { ProjectsService } from './projects.service';
-import { RoleGuard } from 'src/common/guards/role.guard';
-import { Roles } from 'src/common/decorators/role.decorator';
-import { ROLES } from 'src/common/constants';
 import { User } from 'src/common/decorators/user.decorator';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
+import { PermissionGuard } from 'src/common/guards/permission.guard';
+import { Permissions } from 'src/common/decorators/permissions.decorator';
+import { PERMISSION_CODES } from 'src/common/constants/permissions';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
+  @Permissions(PERMISSION_CODES.PROJECT_CREATE)
   @Post('create')
   async createProject(
     @Body() dto: ProjectCreateDto,
@@ -36,8 +35,7 @@ export class ProjectsController {
     return project;
   }
 
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
+  @Permissions(PERMISSION_CODES.PROJECT_UPDATE)
   @Put(':id')
   async updateProject(
     @Param('id', ParseUUIDPipe) projectId: string,
@@ -50,8 +48,7 @@ export class ProjectsController {
     return updatedProject;
   }
 
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
+  @Permissions(PERMISSION_CODES.PROJECT_DELETE)
   @Delete(':id')
   async deleteProject(@Param('id', ParseUUIDPipe) projectId: string) {
     await this.projectsService.deleteProject(projectId);
@@ -66,6 +63,7 @@ export class ProjectsController {
     return await this.projectsService.getAllProjects(user.id, query);
   }
 
+  @Permissions(PERMISSION_CODES.PROJECT_VIEW)
   @Get(':id')
   async getProjectById(@Param('id', ParseUUIDPipe) projectId: string) {
     return await this.projectsService.getProjectById(projectId);

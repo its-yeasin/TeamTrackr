@@ -10,29 +10,28 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ProjectMembersService } from './project-members.service';
-import { RoleGuard } from 'src/common/guards/role.guard';
-import { Roles } from 'src/common/decorators/role.decorator';
-import { ROLES } from 'src/common/constants';
+import { PermissionGuard } from 'src/common/guards/permission.guard';
+import { Permissions } from 'src/common/decorators/permissions.decorator';
+import { PERMISSION_CODES } from 'src/common/constants/permissions';
+import { ProjectMemberAddDto } from './dto/ProjectMemberAddDto';
 
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('projects/:projectId/members')
 export class ProjectMembersController {
   constructor(private readonly projectMembersService: ProjectMembersService) {}
 
   //   Add a new project member
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
-  @Post(':memberUserId')
+  @Permissions(PERMISSION_CODES.PROJECT_MEMBER_ADD)
+  @Post('')
   async addProjectMember(
     @Param('projectId', ParseUUIDPipe) projectId: string,
-    @Param('memberUserId', ParseUUIDPipe) memberUserId: string,
+    @Body() memberAddDto: ProjectMemberAddDto,
   ) {
-    return this.projectMembersService.addProjectMember(projectId, memberUserId);
+    return this.projectMembersService.addProjectMember(projectId, memberAddDto);
   }
 
   //   Remove a project member
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER)
+  @Permissions(PERMISSION_CODES.PROJECT_MEMBER_REMOVE)
   @Delete(':memberUserId')
   async removeProjectMember(
     @Param('projectId', ParseUUIDPipe) projectId: string,
@@ -45,8 +44,6 @@ export class ProjectMembersController {
   }
 
   //   Get all members of a project
-  @UseGuards(RoleGuard)
-  @Roles(ROLES.ADMIN, ROLES.PROJECT_MANAGER, ROLES.TEAM_MEMBER)
   @Get()
   async getProjectMembers(
     @Param('projectId', ParseUUIDPipe) projectId: string,

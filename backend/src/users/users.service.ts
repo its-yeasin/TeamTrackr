@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ne } from 'drizzle-orm';
-import { ROLES } from 'src/common/constants';
+import { SYSTEM_ROLES } from 'src/common/constants';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import { users } from 'src/database/schema';
@@ -21,7 +21,7 @@ export class UsersService {
         updatedAt: users.updatedAt,
       })
       .from(users)
-      .where(ne(users.role, ROLES.ADMIN));
+      .where(ne(users.role, SYSTEM_ROLES.ADMIN));
 
     return allUsers;
   }

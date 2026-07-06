@@ -58,6 +58,7 @@ export class PermissionsService {
         permissionId: rolePermissions.permissionId,
         permissionCode: permissions.code,
         permissionDescription: permissions.description,
+        status: rolePermissions.status,
       })
       .from(projectRoles)
       .leftJoin(rolePermissions, eq(projectRoles.id, rolePermissions.roleId))
@@ -84,6 +85,7 @@ export class PermissionsService {
           id: rp.permissionId,
           code: rp.permissionCode,
           description: rp.permissionDescription,
+          status: rp.status,
         });
       }
     }

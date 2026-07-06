@@ -25,7 +25,6 @@ import { PERMISSION_CODES } from 'src/common/constants/permissions';
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 
-  @Permissions(PERMISSION_CODES.PROJECT_CREATE)
   @Post('create')
   async createProject(
     @Body() dto: ProjectCreateDto,

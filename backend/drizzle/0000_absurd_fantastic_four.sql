@@ -1,9 +1,10 @@
 CREATE TYPE "public"."action" AS ENUM('PROJECT_CREATED', 'PROJECT_UPDATED', 'TASK_CREATED', 'TASK_ASSIGNED', 'TASK_COMPLETED', 'MEMBER_ADDED');--> statement-breakpoint
 CREATE TYPE "public"."entity_type" AS ENUM('PROJECT', 'TASK');--> statement-breakpoint
-CREATE TYPE "public"."permission" AS ENUM('project.view', 'project.create', 'project.update', 'project.delete', 'project.archive', 'project.restore', 'project.member.invite', 'project.member.add', 'project.member.update', 'project.member.remove', 'project.role.manage', 'project.permission.manage', 'task.create', 'task.view', 'task.update', 'task.delete', 'task.assign', 'task.status.update', 'task.priority.update', 'task.due_date.update', 'task.comment', 'task.attachment.upload', 'task.attachment.delete', 'activity.view', 'report.view');--> statement-breakpoint
+CREATE TYPE "public"."permission" AS ENUM('project.view', 'project.update', 'project.delete', 'project.archive', 'project.restore', 'project.member.add', 'project.member.update', 'project.member.remove', 'project.role.manage', 'task.create', 'task.view', 'task.update', 'task.delete', 'task.assign', 'task.status.update', 'task.priority.update', 'task.due_date.update', 'task.comment', 'activity.view', 'report.view');--> statement-breakpoint
 CREATE TYPE "public"."permission_scope" AS ENUM('SYSTEM', 'PROJECT');--> statement-breakpoint
 CREATE TYPE "public"."task_priority" AS ENUM('HIGH', 'MEDIUM', 'LOW');--> statement-breakpoint
 CREATE TYPE "public"."project_status" AS ENUM('ACTIVE', 'COMPLETED', 'ON_HOLD');--> statement-breakpoint
+CREATE TYPE "public"."permission_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."system_role" AS ENUM('ADMIN', 'USER');--> statement-breakpoint
 CREATE TYPE "public"."task_status" AS ENUM('TODO', 'IN_PROGRESS', 'COMPLETED');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
@@ -67,8 +68,9 @@ CREATE TABLE "refresh_tokens" (
 CREATE TABLE "role_permissions" (
 	"role_id" uuid NOT NULL,
 	"permission_id" uuid NOT NULL,
+	"status" "permission_status" DEFAULT 'ACTIVE' NOT NULL,
 	"created_At" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "role_permission_unique" UNIQUE("role_id","permission_id")
+	CONSTRAINT "role_permissions_role_id_permission_id_pk" PRIMARY KEY("role_id","permission_id")
 );
 --> statement-breakpoint
 CREATE TABLE "tasks" (

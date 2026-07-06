@@ -1,5 +1,5 @@
 {
-  "id": "73453105-c49a-4943-bc75-b7d2af4d8a77",
+  "id": "906d331f-e4f2-4ddc-a6d3-2eee05d5e940",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -519,6 +519,14 @@
           "primaryKey": false,
           "notNull": true
         },
+        "status": {
+          "name": "status",
+          "type": "permission_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
         "created_At": {
           "name": "created_At",
           "type": "timestamp",
@@ -556,17 +564,16 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "role_permission_unique": {
-          "name": "role_permission_unique",
-          "nullsNotDistinct": false,
+      "compositePrimaryKeys": {
+        "role_permissions_role_id_permission_id_pk": {
+          "name": "role_permissions_role_id_permission_id_pk",
           "columns": [
             "role_id",
             "permission_id"
           ]
         }
       },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -842,17 +849,14 @@
       "schema": "public",
       "values": [
         "project.view",
-        "project.create",
         "project.update",
         "project.delete",
         "project.archive",
         "project.restore",
-        "project.member.invite",
         "project.member.add",
         "project.member.update",
         "project.member.remove",
         "project.role.manage",
-        "project.permission.manage",
         "task.create",
         "task.view",
         "task.update",
@@ -862,8 +866,6 @@
         "task.priority.update",
         "task.due_date.update",
         "task.comment",
-        "task.attachment.upload",
-        "task.attachment.delete",
         "activity.view",
         "report.view"
       ]
@@ -892,6 +894,14 @@
         "ACTIVE",
         "COMPLETED",
         "ON_HOLD"
+      ]
+    },
+    "public.permission_status": {
+      "name": "permission_status",
+      "schema": "public",
+      "values": [
+        "ACTIVE",
+        "INACTIVE"
       ]
     },
     "public.system_role": {

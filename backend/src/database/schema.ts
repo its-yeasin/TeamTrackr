@@ -1,5 +1,6 @@
 import { timestamp } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
+import { primaryKey } from 'drizzle-orm/pg-core';
 import {
   varchar,
   unique,
@@ -153,7 +154,9 @@ export const rolePermissions = pgTable(
     createdAt: timestamp('created_At').defaultNow().notNull(),
   },
   (table) => [
-    unique('role_permission_unique').on(table.roleId, table.permissionId),
+    primaryKey({
+      columns: [table.roleId, table.permissionId],
+    }),
   ],
 );
 

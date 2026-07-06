@@ -6,5 +6,6 @@ export class RolePermissionResponseDto {
     id: string;
     code: string;
     description: string;
+    status: 'ACTIVE' | 'INACTIVE';
   }[];
 }

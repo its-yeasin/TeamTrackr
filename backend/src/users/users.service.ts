@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { ne } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
 import { SYSTEM_ROLES } from 'src/common/constants';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
@@ -24,5 +24,23 @@ export class UsersService {
       .where(ne(users.role, SYSTEM_ROLES.ADMIN));
 
     return allUsers;
+  }
+
+  async getCurrentUser(userId: string) {
+    const user = await this.db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        avatarUrl: users.avatarUrl,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    return user[0];
   }
 }

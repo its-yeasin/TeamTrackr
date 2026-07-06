@@ -23,6 +23,10 @@ export const systemRoleEnum = pgEnum('system_role', [
 ]);
 
 export const userStatusEnum = pgEnum('user_status', ['ACTIVE', 'INACTIVE']);
+export const rolePermissionStatusEnum = pgEnum('permission_status', [
+  'ACTIVE',
+  'INACTIVE',
+]);
 
 export const projectStatusEnum = pgEnum('project_status', [
   PROJECT_STATUSES.ACTIVE,
@@ -145,6 +149,7 @@ export const rolePermissions = pgTable(
     permissionId: uuid('permission_id')
       .references(() => permissions.id)
       .notNull(),
+    status: rolePermissionStatusEnum('status').default('ACTIVE').notNull(),
     createdAt: timestamp('created_At').defaultNow().notNull(),
   },
   (table) => [

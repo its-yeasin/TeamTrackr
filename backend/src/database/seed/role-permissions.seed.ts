@@ -7,7 +7,6 @@ import {
 
 const rolePermissionsData: Record<string, TPermissionCode[]> = {
   'Project Admin': [
-    PERMISSION_CODES.PROJECT_CREATE,
     PERMISSION_CODES.PROJECT_VIEW,
     PERMISSION_CODES.PROJECT_UPDATE,
     PERMISSION_CODES.PROJECT_DELETE,
@@ -105,6 +104,7 @@ async function seedRolePermissions(db: TPgDatabase) {
           .values({
             roleId,
             permissionId,
+            status: 'ACTIVE',
           })
           .onConflictDoNothing();
       }

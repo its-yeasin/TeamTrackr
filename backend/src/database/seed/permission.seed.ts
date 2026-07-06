@@ -4,10 +4,6 @@ import { permissions } from '../schema';
 
 const permissionData = [
   {
-    code: PERMISSION_CODES.PROJECT_CREATE,
-    description: 'Create a new project',
-  },
-  {
     code: PERMISSION_CODES.PROJECT_VIEW,
     description: 'View project details and associated tasks',
   },
@@ -21,10 +17,7 @@ const permissionData = [
     code: PERMISSION_CODES.PROJECT_RESTORE,
     description: 'Restore an archived project',
   },
-  {
-    code: PERMISSION_CODES.PROJECT_MEMBER_INVITE,
-    description: 'Invite a user to join the project',
-  },
+
   {
     code: PERMISSION_CODES.PROJECT_MEMBER_ADD,
     description: 'Add a user to the project as a member',
@@ -41,10 +34,7 @@ const permissionData = [
     code: PERMISSION_CODES.PROJECT_ROLE_MANAGE,
     description: 'Manage roles within the project',
   },
-  {
-    code: PERMISSION_CODES.PROJECT_PERMISSION_MANAGE,
-    description: 'Manage permissions for roles within the project',
-  },
+
   { code: PERMISSION_CODES.TASK_CREATE, description: 'Create a new task' },
   { code: PERMISSION_CODES.TASK_VIEW, description: 'View task details' },
   { code: PERMISSION_CODES.TASK_UPDATE, description: 'Update task details' },
@@ -72,18 +62,6 @@ const permissionData = [
     code: PERMISSION_CODES.REPORT_VIEW,
     description: 'View reports',
   },
-  //   {
-  //     code: PERMISSION_CODES.TASK_DUE_DATE_UPDATE,
-  //     description: 'Update the due date of a task',
-  //   },
-  //   {
-  //     code: PERMISSION_CODES.TASK_ATTACHMENT_UPLOAD,
-  //     description: 'Upload an attachment to a task',
-  //   },
-  //   {
-  //     code: PERMISSION_CODES.TASK_ATTACHMENT_DELETE,
-  //     description: 'Delete an attachment from a task',
-  //   },
 ];
 
 async function seedPermissions(db: TPgDatabase) {

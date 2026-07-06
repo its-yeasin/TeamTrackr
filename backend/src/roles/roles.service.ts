@@ -8,6 +8,7 @@ import { projectRoles } from 'src/database/schema';
 export class RolesService {
   constructor(@Inject(DATABASE_TOKEN) private readonly db: TPgDatabase) {}
 
+  // Get all available project roles
   async getProjectRoles(): Promise<AvailableRolesDto[]> {
     const roles = await this.db
       .select({

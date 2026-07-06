@@ -13,6 +13,7 @@ import {
 export class PermissionsService {
   constructor(@Inject(DATABASE_TOKEN) private readonly db: TPgDatabase) {}
 
+  // Check if a user has specific permissions within a project
   async hasPermission(
     userId: string,
     projectId: string,
@@ -36,5 +37,12 @@ export class PermissionsService {
       .limit(1);
 
     return !!permission;
+  }
+
+  // All available permissions in the system
+  async getAllPermissions(): Promise<
+    { code: TPermissionCode; description: string }[]
+  > {
+    return this.db.select().from(permissions);
   }
 }

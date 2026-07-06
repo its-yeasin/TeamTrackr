@@ -6,8 +6,10 @@ import { DATABASE_TOKEN } from 'src/database/database.module';
 import {
   permissions,
   projectMembers,
+  projectRoles,
   rolePermissions,
 } from 'src/database/schema';
+import { RolePermissionResponseDto } from './dto/RolePermissionResponseDto';
 
 @Injectable()
 export class PermissionsService {
@@ -44,5 +46,48 @@ export class PermissionsService {
     { code: TPermissionCode; description: string }[]
   > {
     return this.db.select().from(permissions);
+  }
+
+  // Get all permissions associated with a specific role
+  async getRolePermissions(): Promise<RolePermissionResponseDto[]> {
+    const rolePermissionsList = await this.db
+      .select({
+        roleId: rolePermissions.roleId,
+        roleName: projectRoles.name,
+        roleDescription: projectRoles.description,
+        permissionId: rolePermissions.permissionId,
+        permissionCode: permissions.code,
+        permissionDescription: permissions.description,
+      })
+      .from(projectRoles)
+      .leftJoin(rolePermissions, eq(projectRoles.id, rolePermissions.roleId))
+      .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id));
+
+    const result: RolePermissionResponseDto[] = [];
+    const map = new Map<string, RolePermissionResponseDto>();
+
+    for (const rp of rolePermissionsList) {
+      if (!map.has(rp.roleId)) {
+        const roleDto: RolePermissionResponseDto = {
+          id: rp.roleId,
+          name: rp.roleName,
+          description: rp.roleDescription,
+          permissions: [],
+        };
+        map.set(rp.roleId, roleDto);
+        result.push(roleDto);
+      }
+
+      const roleDto = map.get(rp.roleId);
+      if (roleDto) {
+        roleDto.permissions.push({
+          id: rp.permissionId,
+          code: rp.permissionCode,
+          description: rp.permissionDescription,
+        });
+      }
+    }
+
+    return result;
   }
 }

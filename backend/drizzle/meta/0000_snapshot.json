@@ -1,5 +1,5 @@
 {
-  "id": "906d331f-e4f2-4ddc-a6d3-2eee05d5e940",
+  "id": "9036f233-82ac-4e3f-b5ca-38645947a6fa",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -85,7 +85,6 @@
         "code": {
           "name": "code",
           "type": "permission",
-          "typeSchema": "public",
           "primaryKey": false,
           "notNull": true
         },
@@ -103,15 +102,15 @@
           "notNull": true,
           "default": "'PROJECT'"
         },
-        "created_At": {
-          "name": "created_At",
+        "created_at": {
+          "name": "created_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         },
-        "updated_At": {
-          "name": "updated_At",
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -121,7 +120,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "permissions_code_unique": {
+          "name": "permissions_code_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -164,11 +171,41 @@
         }
       },
       "indexes": {
-        "pm_user_id_idx": {
-          "name": "pm_user_id_idx",
+        "pm_project_idx": {
+          "name": "pm_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pm_user_idx": {
+          "name": "pm_user_idx",
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "pm_role_idx": {
+          "name": "pm_role_idx",
+          "columns": [
+            {
+              "expression": "role_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -207,10 +244,10 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "project_members_role_id_project_roles_id_fk": {
-          "name": "project_members_role_id_project_roles_id_fk",
+        "project_members_role_id_roles_id_fk": {
+          "name": "project_members_role_id_roles_id_fk",
           "tableFrom": "project_members",
-          "tableTo": "project_roles",
+          "tableTo": "roles",
           "columnsFrom": [
             "role_id"
           ],
@@ -232,52 +269,6 @@
           ]
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.project_roles": {
-      "name": "project_roles",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "name": {
-          "name": "name",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_At": {
-          "name": "created_At",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_At": {
-          "name": "updated_At",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -519,16 +510,22 @@
           "primaryKey": false,
           "notNull": true
         },
-        "status": {
-          "name": "status",
-          "type": "permission_status",
-          "typeSchema": "public",
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true,
-          "default": "'ACTIVE'"
+          "default": true
         },
-        "created_At": {
-          "name": "created_At",
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": true,
@@ -537,10 +534,10 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "role_permissions_role_id_project_roles_id_fk": {
-          "name": "role_permissions_role_id_project_roles_id_fk",
+        "role_permissions_role_id_roles_id_fk": {
+          "name": "role_permissions_role_id_roles_id_fk",
           "tableFrom": "role_permissions",
-          "tableTo": "project_roles",
+          "tableTo": "roles",
           "columnsFrom": [
             "role_id"
           ],
@@ -574,6 +571,104 @@
         }
       },
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.roles": {
+      "name": "roles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "project_id": {
+          "name": "project_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_default": {
+          "name": "is_default",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "role_project_idx": {
+          "name": "role_project_idx",
+          "columns": [
+            {
+              "expression": "project_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "roles_project_id_projects_id_fk": {
+          "name": "roles_project_id_projects_id_fk",
+          "tableFrom": "roles",
+          "tableTo": "projects",
+          "columnsFrom": [
+            "project_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "project_role_name_unique": {
+          "name": "project_role_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "project_id",
+            "name"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -878,15 +973,6 @@
         "PROJECT"
       ]
     },
-    "public.task_priority": {
-      "name": "task_priority",
-      "schema": "public",
-      "values": [
-        "HIGH",
-        "MEDIUM",
-        "LOW"
-      ]
-    },
     "public.project_status": {
       "name": "project_status",
       "schema": "public",
@@ -896,20 +982,21 @@
         "ON_HOLD"
       ]
     },
-    "public.permission_status": {
-      "name": "permission_status",
-      "schema": "public",
-      "values": [
-        "ACTIVE",
-        "INACTIVE"
-      ]
-    },
     "public.system_role": {
       "name": "system_role",
       "schema": "public",
       "values": [
         "ADMIN",
         "USER"
+      ]
+    },
+    "public.task_priority": {
+      "name": "task_priority",
+      "schema": "public",
+      "values": [
+        "HIGH",
+        "MEDIUM",
+        "LOW"
       ]
     },
     "public.task_status": {

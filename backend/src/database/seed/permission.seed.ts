@@ -1,8 +1,16 @@
-import { PERMISSION_CODES } from 'src/common/constants/permissions';
+import {
+  PERMISSION_CODES,
+  TPermissionCode,
+} from 'src/common/constants/permissions';
 import { TPgDatabase } from 'src/common/interfaces/db';
 import { permissions } from '../schema';
 
-const permissionData = [
+interface PermissionSeed {
+  code: TPermissionCode;
+  description: string;
+}
+
+const permissionData: PermissionSeed[] = [
   {
     code: PERMISSION_CODES.PROJECT_VIEW,
     description: 'View project details and associated tasks',
@@ -47,6 +55,10 @@ const permissionData = [
     code: PERMISSION_CODES.TASK_STATUS_UPDATE,
     description:
       'Update the status of a task (e.g., To Do, In Progress, Completed)',
+  },
+  {
+    code: PERMISSION_CODES.TASK_DUE_DATE_UPDATE,
+    description: 'Update the due date of a task',
   },
   {
     code: PERMISSION_CODES.TASK_PRIORITY_UPDATE,

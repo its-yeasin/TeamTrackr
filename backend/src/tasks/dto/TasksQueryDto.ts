@@ -6,7 +6,7 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { priorityEnum, taskStatusEnum } from 'src/database/schema';
+import { taskPriorityEnum, taskStatusEnum } from 'src/database/schema';
 
 export class TasksQueryDto {
   @IsOptional()
@@ -22,8 +22,8 @@ export class TasksQueryDto {
   projectId?: string;
 
   @IsOptional()
-  @IsIn(priorityEnum.enumValues, {
-    message: `Priority must be one of the following values: ${priorityEnum.enumValues.join(', ')}`,
+  @IsIn(taskPriorityEnum.enumValues, {
+    message: `Priority must be one of the following values: ${taskPriorityEnum.enumValues.join(', ')}`,
   })
   priority?: string;
 

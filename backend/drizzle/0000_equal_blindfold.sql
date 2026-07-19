@@ -2,10 +2,9 @@ CREATE TYPE "public"."action" AS ENUM('PROJECT_CREATED', 'PROJECT_UPDATED', 'TAS
 CREATE TYPE "public"."entity_type" AS ENUM('PROJECT', 'TASK');--> statement-breakpoint
 CREATE TYPE "public"."permission" AS ENUM('project.view', 'project.update', 'project.delete', 'project.archive', 'project.restore', 'project.member.add', 'project.member.update', 'project.member.remove', 'project.role.manage', 'task.create', 'task.view', 'task.update', 'task.delete', 'task.assign', 'task.status.update', 'task.priority.update', 'task.due_date.update', 'task.comment', 'activity.view', 'report.view');--> statement-breakpoint
 CREATE TYPE "public"."permission_scope" AS ENUM('SYSTEM', 'PROJECT');--> statement-breakpoint
-CREATE TYPE "public"."task_priority" AS ENUM('HIGH', 'MEDIUM', 'LOW');--> statement-breakpoint
 CREATE TYPE "public"."project_status" AS ENUM('ACTIVE', 'COMPLETED', 'ON_HOLD');--> statement-breakpoint
-CREATE TYPE "public"."permission_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
 CREATE TYPE "public"."system_role" AS ENUM('ADMIN', 'USER');--> statement-breakpoint
+CREATE TYPE "public"."task_priority" AS ENUM('HIGH', 'MEDIUM', 'LOW');--> statement-breakpoint
 CREATE TYPE "public"."task_status" AS ENUM('TODO', 'IN_PROGRESS', 'COMPLETED');--> statement-breakpoint
 CREATE TYPE "public"."user_status" AS ENUM('ACTIVE', 'INACTIVE');--> statement-breakpoint
 CREATE TABLE "activity_logs" (
@@ -22,8 +21,9 @@ CREATE TABLE "permissions" (
 	"code" "permission" NOT NULL,
 	"description" text NOT NULL,
 	"scope" "permission_scope" DEFAULT 'PROJECT' NOT NULL,
-	"created_At" timestamp DEFAULT now() NOT NULL,
-	"updated_At" timestamp DEFAULT now() NOT NULL
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "permissions_code_unique" UNIQUE("code")
 );
 --> statement-breakpoint
 CREATE TABLE "project_members" (
@@ -33,14 +33,6 @@ CREATE TABLE "project_members" (
 	"role_id" uuid NOT NULL,
 	"joined_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "project_user_unique" UNIQUE("project_id","user_id")
-);
---> statement-breakpoint
-CREATE TABLE "project_roles" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"name" varchar(100) NOT NULL,
-	"description" text,
-	"created_At" timestamp DEFAULT now() NOT NULL,
-	"updated_At" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "projects" (
@@ -68,9 +60,21 @@ CREATE TABLE "refresh_tokens" (
 CREATE TABLE "role_permissions" (
 	"role_id" uuid NOT NULL,
 	"permission_id" uuid NOT NULL,
-	"status" "permission_status" DEFAULT 'ACTIVE' NOT NULL,
-	"created_At" timestamp DEFAULT now() NOT NULL,
+	"enabled" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "role_permissions_role_id_permission_id_pk" PRIMARY KEY("role_id","permission_id")
+);
+--> statement-breakpoint
+CREATE TABLE "roles" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"project_id" uuid NOT NULL,
+	"name" varchar(100) NOT NULL,
+	"description" text,
+	"is_default" boolean DEFAULT false NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "project_role_name_unique" UNIQUE("project_id","name")
 );
 --> statement-breakpoint
 CREATE TABLE "tasks" (
@@ -104,18 +108,22 @@ CREATE TABLE "users" (
 ALTER TABLE "activity_logs" ADD CONSTRAINT "activity_logs_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_members" ADD CONSTRAINT "project_members_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "project_members" ADD CONSTRAINT "project_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "project_members" ADD CONSTRAINT "project_members_role_id_project_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."project_roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "project_members" ADD CONSTRAINT "project_members_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "projects" ADD CONSTRAINT "projects_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_id_project_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."project_roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "role_permissions" ADD CONSTRAINT "role_permissions_permission_id_permissions_id_fk" FOREIGN KEY ("permission_id") REFERENCES "public"."permissions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "roles" ADD CONSTRAINT "roles_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_assigned_to_users_id_fk" FOREIGN KEY ("assigned_to") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "pm_user_id_idx" ON "project_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "pm_project_idx" ON "project_members" USING btree ("project_id");--> statement-breakpoint
+CREATE INDEX "pm_user_idx" ON "project_members" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "pm_role_idx" ON "project_members" USING btree ("role_id");--> statement-breakpoint
 CREATE INDEX "project_created_by_idx" ON "projects" USING btree ("created_by");--> statement-breakpoint
 CREATE INDEX "project_deleted_at_idx" ON "projects" USING btree ("deleted_At");--> statement-breakpoint
 CREATE INDEX "rt_user_id_idx" ON "refresh_tokens" USING btree ("user_id");--> statement-breakpoint
 CREATE INDEX "rt_token_idx" ON "refresh_tokens" USING btree ("token");--> statement-breakpoint
+CREATE INDEX "role_project_idx" ON "roles" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "task_project_id_idx" ON "tasks" USING btree ("project_id");--> statement-breakpoint
 CREATE INDEX "task_assigned_to_idx" ON "tasks" USING btree ("assigned_to");

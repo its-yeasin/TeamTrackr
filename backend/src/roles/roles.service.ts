@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import { AvailableRolesDto } from './dto/AvailableRolesDto';
-import { projectRoles } from 'src/database/schema';
+import { roles } from 'src/database/schema';
 
 @Injectable()
 export class RolesService {
@@ -10,14 +10,14 @@ export class RolesService {
 
   // Get all available project roles
   async getProjectRoles(): Promise<AvailableRolesDto[]> {
-    const roles = await this.db
+    const allRoles = await this.db
       .select({
-        id: projectRoles.id,
-        name: projectRoles.name,
-        description: projectRoles.description,
+        id: roles.id,
+        name: roles.name,
+        description: roles.description,
       })
-      .from(projectRoles);
+      .from(roles);
 
-    return roles;
+    return allRoles;
   }
 }

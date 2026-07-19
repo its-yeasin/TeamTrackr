@@ -9,7 +9,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import type { TTaskPriority } from 'src/common/constants';
-import { priorityEnum } from 'src/database/schema';
+import { taskPriorityEnum } from 'src/database/schema';
 
 export class TaskCreateDto {
   @IsString()
@@ -27,8 +27,8 @@ export class TaskCreateDto {
   assignedTo?: string;
 
   @IsNotEmpty({ message: 'Priority is required' })
-  @IsIn(priorityEnum.enumValues, {
-    message: `Priority must be one of the following: ${priorityEnum.enumValues.join(', ')}`,
+  @IsIn(taskPriorityEnum.enumValues, {
+    message: `Priority must be one of the following: ${taskPriorityEnum.enumValues.join(', ')}`,
   })
   priority: TTaskPriority;
 

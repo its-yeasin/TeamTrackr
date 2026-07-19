@@ -1,33 +1,3 @@
-export const PERMISSIONS = [
-  'project.view',
-  'project.update',
-  'project.delete',
-
-  'project.archive',
-  'project.restore',
-
-  'project.member.add',
-  'project.member.update',
-  'project.member.remove',
-
-  'project.role.manage',
-
-  'task.create',
-  'task.view',
-  'task.update',
-  'task.delete',
-  'task.assign',
-
-  'task.status.update',
-  'task.priority.update',
-  'task.due_date.update',
-
-  'task.comment',
-
-  'activity.view',
-  'report.view',
-] as const;
-
 export const PERMISSION_CODES = {
   PROJECT_VIEW: 'project.view',
   PROJECT_UPDATE: 'project.update',
@@ -58,4 +28,5 @@ export const PERMISSION_CODES = {
   REPORT_VIEW: 'report.view',
 } as const;
 
-export type TPermissionCode = (typeof PERMISSIONS)[number];
+export type TPermissionCode =
+  (typeof PERMISSION_CODES)[keyof typeof PERMISSION_CODES];

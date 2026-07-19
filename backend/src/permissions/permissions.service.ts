@@ -6,7 +6,7 @@ import { DATABASE_TOKEN } from 'src/database/database.module';
 import {
   permissions,
   projectMembers,
-  projectRoles,
+  roles,
   rolePermissions,
 } from 'src/database/schema';
 import { RolePermissionResponseDto } from './dto/RolePermissionResponseDto';
@@ -53,15 +53,15 @@ export class PermissionsService {
     const rolePermissionsList = await this.db
       .select({
         roleId: rolePermissions.roleId,
-        roleName: projectRoles.name,
-        roleDescription: projectRoles.description,
+        roleName: roles.name,
+        roleDescription: roles.description,
         permissionId: rolePermissions.permissionId,
         permissionCode: permissions.code,
         permissionDescription: permissions.description,
-        status: rolePermissions.status,
+        enabled: rolePermissions.enabled,
       })
-      .from(projectRoles)
-      .leftJoin(rolePermissions, eq(projectRoles.id, rolePermissions.roleId))
+      .from(roles)
+      .leftJoin(rolePermissions, eq(roles.id, rolePermissions.roleId))
       .leftJoin(permissions, eq(rolePermissions.permissionId, permissions.id));
 
     const result: RolePermissionResponseDto[] = [];
@@ -85,7 +85,7 @@ export class PermissionsService {
           id: rp.permissionId,
           code: rp.permissionCode,
           description: rp.permissionDescription,
-          status: rp.status,
+          enabled: rp.enabled,
         });
       }
     }

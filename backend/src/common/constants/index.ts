@@ -39,3 +39,12 @@ export const TASK_STATUSES = {
 } as const;
 
 export type TTaskStatus = (typeof TASK_STATUSES)[keyof typeof TASK_STATUSES];
+
+/* ==================Permission Scope================== */
+export const PERMISSION_SCOPES = {
+  SYSTEM: 'SYSTEM',
+  PROJECT: 'PROJECT',
+} as const;
+
+export type TPermissionScope =
+  (typeof PERMISSION_SCOPES)[keyof typeof PERMISSION_SCOPES];

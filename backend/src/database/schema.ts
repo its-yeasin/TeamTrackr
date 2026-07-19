@@ -11,22 +11,27 @@ import {
   index,
 } from 'drizzle-orm/pg-core';
 import {
+  PERMISSION_SCOPES,
   PROJECT_STATUSES,
   SYSTEM_ROLES,
   TASK_PRIORITIES,
   TASK_STATUSES,
+  USER_STATUS,
 } from 'src/common/constants';
-import { PERMISSIONS } from 'src/common/constants/permissions';
+import {
+  ACTIVITY_ACTIONS,
+  ACTIVITY_ENTITY_TYPES,
+} from 'src/common/constants/activity';
+import { PERMISSION_CODES } from 'src/common/constants/permissions';
 
 export const systemRoleEnum = pgEnum('system_role', [
   SYSTEM_ROLES.ADMIN,
   SYSTEM_ROLES.USER,
 ]);
 
-export const userStatusEnum = pgEnum('user_status', ['ACTIVE', 'INACTIVE']);
-export const rolePermissionStatusEnum = pgEnum('permission_status', [
-  'ACTIVE',
-  'INACTIVE',
+export const userStatusEnum = pgEnum('user_status', [
+  USER_STATUS.ACTIVE,
+  USER_STATUS.INACTIVE,
 ]);
 
 export const projectStatusEnum = pgEnum('project_status', [
@@ -35,7 +40,7 @@ export const projectStatusEnum = pgEnum('project_status', [
   PROJECT_STATUSES.ON_HOLD,
 ]);
 
-export const priorityEnum = pgEnum('task_priority', [
+export const taskPriorityEnum = pgEnum('task_priority', [
   TASK_PRIORITIES.HIGH,
   TASK_PRIORITIES.MEDIUM,
   TASK_PRIORITIES.LOW,
@@ -48,21 +53,24 @@ export const taskStatusEnum = pgEnum('task_status', [
 ]);
 
 export const permissionScopeEnum = pgEnum('permission_scope', [
-  'SYSTEM',
-  'PROJECT',
+  PERMISSION_SCOPES.SYSTEM,
+  PERMISSION_SCOPES.PROJECT,
 ]);
 
-export const permissionEnum = pgEnum('permission', PERMISSIONS);
+export const permissionEnum = pgEnum('permission', PERMISSION_CODES);
 
-export const entityTypeEnum = pgEnum('entity_type', ['PROJECT', 'TASK']);
+export const entityTypeEnum = pgEnum('entity_type', [
+  ACTIVITY_ENTITY_TYPES.PROJECT,
+  ACTIVITY_ENTITY_TYPES.TASK,
+]);
 
 export const activityActionEnum = pgEnum('action', [
-  'PROJECT_CREATED',
-  'PROJECT_UPDATED',
-  'TASK_CREATED',
-  'TASK_ASSIGNED',
-  'TASK_COMPLETED',
-  'MEMBER_ADDED',
+  ACTIVITY_ACTIONS.PROJECT_CREATED,
+  ACTIVITY_ACTIONS.PROJECT_UPDATED,
+  ACTIVITY_ACTIONS.TASK_CREATED,
+  ACTIVITY_ACTIONS.TASK_ASSIGNED,
+  ACTIVITY_ACTIONS.TASK_COMPLETED,
+  ACTIVITY_ACTIONS.MEMBER_ADDED,
 ]);
 
 // Users table
@@ -121,37 +129,63 @@ export const projects = pgTable(
 );
 
 // Roles table
-export const projectRoles = pgTable('project_roles', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  name: varchar('name', { length: 100 }).notNull(),
-  description: text('description'),
-  createdAt: timestamp('created_At').defaultNow().notNull(),
-  updatedAt: timestamp('updated_At').defaultNow().notNull(),
-});
+export const roles = pgTable(
+  'roles',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+
+    projectId: uuid('project_id')
+      .references(() => projects.id)
+      .notNull(),
+
+    name: varchar('name', { length: 100 }).notNull(),
+
+    description: text('description'),
+
+    isDefault: boolean('is_default').default(false).notNull(),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  (table) => [
+    unique('project_role_name_unique').on(table.projectId, table.name),
+
+    index('role_project_idx').on(table.projectId),
+  ],
+);
 
 // Permissions table
 export const permissions = pgTable('permissions', {
   id: uuid('id').defaultRandom().primaryKey(),
-  code: permissionEnum('code').notNull(),
+
+  code: permissionEnum('code').notNull().unique(),
+
   description: text('description').notNull(),
-  scope: pgEnum('permission_scope', ['SYSTEM', 'PROJECT'])('scope')
-    .default('PROJECT')
-    .notNull(),
-  createdAt: timestamp('created_At').defaultNow().notNull(),
-  updatedAt: timestamp('updated_At').defaultNow().notNull(),
+
+  scope: permissionScopeEnum('scope').default('PROJECT').notNull(),
+
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 export const rolePermissions = pgTable(
   'role_permissions',
   {
     roleId: uuid('role_id')
-      .references(() => projectRoles.id)
+      .references(() => roles.id)
       .notNull(),
+
     permissionId: uuid('permission_id')
       .references(() => permissions.id)
       .notNull(),
-    status: rolePermissionStatusEnum('status').default('ACTIVE').notNull(),
-    createdAt: timestamp('created_At').defaultNow().notNull(),
+
+    enabled: boolean('enabled').default(true).notNull(),
+
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },
   (table) => [
     primaryKey({
@@ -165,20 +199,29 @@ export const projectMembers = pgTable(
   'project_members',
   {
     id: uuid('id').defaultRandom().primaryKey(),
+
     projectId: uuid('project_id')
       .references(() => projects.id)
       .notNull(),
+
     userId: uuid('user_id')
       .references(() => users.id)
       .notNull(),
+
     roleId: uuid('role_id')
-      .references(() => projectRoles.id)
+      .references(() => roles.id)
       .notNull(),
+
     joinedAt: timestamp('joined_at').defaultNow().notNull(),
   },
   (table) => [
     unique('project_user_unique').on(table.projectId, table.userId),
-    index('pm_user_id_idx').on(table.userId),
+
+    index('pm_project_idx').on(table.projectId),
+
+    index('pm_user_idx').on(table.userId),
+
+    index('pm_role_idx').on(table.roleId),
   ],
 );
 
@@ -196,7 +239,7 @@ export const tasks = pgTable(
     createdBy: uuid('created_by')
       .references(() => users.id)
       .notNull(),
-    priority: priorityEnum('priority').notNull(),
+    priority: taskPriorityEnum('priority').notNull(),
     status: taskStatusEnum('status').default('TODO').notNull(),
     dueDate: timestamp('due_date').notNull(),
     createdAt: timestamp('created_At').defaultNow().notNull(),

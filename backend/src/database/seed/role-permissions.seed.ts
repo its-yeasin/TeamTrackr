@@ -1,5 +1,5 @@
 import type { TPgDatabase } from 'src/common/interfaces/db';
-import { permissions, projectRoles, rolePermissions } from '../schema';
+import { permissions, roles, rolePermissions } from '../schema';
 import {
   PERMISSION_CODES,
   type TPermissionCode,
@@ -80,7 +80,7 @@ async function seedRolePermissions(db: TPgDatabase) {
 
   try {
     // Fetch all roles and permissions from the database
-    const allRoles = await db.select().from(projectRoles);
+    const allRoles = await db.select().from(roles);
     const allPermissions = await db.select().from(permissions);
 
     const roleMap = new Map(allRoles.map((r) => [r.name, r.id]));
@@ -108,7 +108,7 @@ async function seedRolePermissions(db: TPgDatabase) {
           .values({
             roleId,
             permissionId,
-            status: 'ACTIVE',
+            enabled: true,
           })
           .onConflictDoNothing();
       }

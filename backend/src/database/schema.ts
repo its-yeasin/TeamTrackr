@@ -137,7 +137,7 @@ export const roles = pgTable(
     projectId: uuid('project_id')
       .references(() => projects.id)
       .notNull(),
-
+    code: varchar('code', { length: 100 }).notNull(),
     name: varchar('name', { length: 100 }).notNull(),
 
     description: text('description'),
@@ -284,3 +284,5 @@ export type TNewTask = typeof tasks.$inferInsert;
 export type TActivityLog = typeof activityLogs.$inferSelect;
 
 export type TSystemRole = typeof systemRoleEnum;
+
+export type TRolePermissionPayload = typeof rolePermissions.$inferInsert;

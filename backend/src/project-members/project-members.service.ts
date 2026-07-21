@@ -28,16 +28,17 @@ export class ProjectMembersService {
   async addProjectMember(
     projectId: string,
     memberAddDto: ProjectMemberAddDto,
+    db = this.db,
   ): Promise<TProjectMember> {
     const [, [existingUser], [projectMember]] = await Promise.all([
       // Check if the project exists and is not deleted
       this.projectsService.getProjectById(projectId),
 
       // Check if the user already exists
-      this.db.select().from(users).where(eq(users.id, memberAddDto.userId)),
+      db.select().from(users).where(eq(users.id, memberAddDto.userId)),
 
       // Check if the user is already a member of the project
-      this.db
+      db
         .select()
         .from(projectMembers)
         .where(
@@ -62,7 +63,7 @@ export class ProjectMembersService {
       roleId: memberAddDto.roleId,
     };
 
-    const [newProjectMember] = await this.db
+    const [newProjectMember] = await db
       .insert(projectMembers)
       .values(payload)
       .returning();

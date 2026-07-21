@@ -3,15 +3,23 @@ import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import { ProjectCreateDto } from './dto/ProjectCreateDto';
 import {
+  permissions,
   projectMembers,
   projects,
+  rolePermissions,
+  roles,
   TNewProject,
   TProject,
+  type TRolePermissionPayload,
 } from 'src/database/schema';
 import { and, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm';
 import { GetProjectDto } from './dto/GetProjectDto';
 import { TProjectStatus } from 'src/common/constants';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
+import {
+  DEFAULT_PROJECT_ROLES,
+  DEFAULT_ROLE_PERMISSIONS,
+} from './projects.constants';
 
 @Injectable()
 export class ProjectsService {
@@ -30,11 +38,28 @@ export class ProjectsService {
       createdBy: userId,
     };
 
-    // Store project data in the database
-    const [newProject] = await this.db
-      .insert(projects)
-      .values(payload)
-      .returning();
+    const newProject = await this.db.transaction(async (tx) => {
+      // Insert the new project
+      const [newProject] = await tx
+        .insert(projects)
+        .values(payload)
+        .returning();
+
+      // Create default roles for the new project
+      const { ownerRole } = await this.initializeProjectRoles(
+        newProject.id,
+        tx,
+      );
+
+      // Add the creator as the Owner of the project
+      await tx.insert(projectMembers).values({
+        projectId: newProject.id,
+        userId,
+        roleId: ownerRole?.id,
+      });
+
+      return newProject;
+    });
 
     return newProject;
   }
@@ -147,5 +172,43 @@ export class ProjectsService {
       .update(projects)
       .set({ deletedAt: new Date() })
       .where(eq(projects.id, projectId));
+  }
+
+  // createRoles
+  private async initializeProjectRoles(projectId: string, tx = this.db) {
+    const roleData = DEFAULT_PROJECT_ROLES.map((role) => ({
+      projectId,
+      isDefault: true,
+      ...role,
+    }));
+
+    const insertedRoles = await tx.insert(roles).values(roleData).returning();
+
+    // Get all permissions
+    const allPermissions = await tx.select().from(permissions);
+
+    const rolePermissionRows: TRolePermissionPayload[] = [];
+
+    for (const role of insertedRoles) {
+      // Get the allowed permissions for this role from the DEFAULT_ROLE_PERMISSIONS mapping
+      const allowedPermissions = DEFAULT_ROLE_PERMISSIONS[role.code] ?? [];
+
+      for (const permission of allPermissions) {
+        // Check if the permission is allowed for this role
+        rolePermissionRows.push({
+          roleId: role.id,
+          permissionId: permission.id,
+          enabled: allowedPermissions.includes(permission.code),
+        });
+      }
+    }
+
+    // Insert role-permission mappings into the rolePermissions table
+    await tx.insert(rolePermissions).values(rolePermissionRows);
+
+    return {
+      roles: insertedRoles,
+      ownerRole: insertedRoles.find((role) => role.code === 'OWNER'),
+    };
   }
 }

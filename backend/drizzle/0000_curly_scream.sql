@@ -69,6 +69,7 @@ CREATE TABLE "role_permissions" (
 CREATE TABLE "roles" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"project_id" uuid NOT NULL,
+	"code" varchar(100) NOT NULL,
 	"name" varchar(100) NOT NULL,
 	"description" text,
 	"is_default" boolean DEFAULT false NOT NULL,

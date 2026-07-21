@@ -1,5 +1,5 @@
 {
-  "id": "9036f233-82ac-4e3f-b5ca-38645947a6fa",
+  "id": "efa68563-d6f8-4d85-9062-bfa6c28c9973",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -589,6 +589,12 @@
         "project_id": {
           "name": "project_id",
           "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(100)",
           "primaryKey": false,
           "notNull": true
         },

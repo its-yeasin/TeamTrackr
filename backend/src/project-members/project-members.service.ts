@@ -8,7 +8,10 @@ import { and, eq } from 'drizzle-orm';
 import type { TPgDatabase } from 'src/common/interfaces/db';
 import { DATABASE_TOKEN } from 'src/database/database.module';
 import {
+  permissions,
   projectMembers,
+  rolePermissions,
+  roles,
   TNewProjectMember,
   TProjectMember,
   users,
@@ -121,19 +124,46 @@ export class ProjectMembersService {
   async getProjectMembers(projectId: string): Promise<GetProjectMembersDto[]> {
     const project = await this.projectsService.getProjectById(projectId);
 
-    const members = await this.db
+    const rows = await this.db
       .select({
         userId: users.id,
         projectId: projectMembers.projectId,
         name: users.name,
         email: users.email,
-        role: users.role,
+        role: roles.name,
+        permissionCode: permissions.code,
         joinedAt: projectMembers.joinedAt,
+        enabled: rolePermissions.enabled,
       })
       .from(projectMembers)
       .innerJoin(users, eq(projectMembers.userId, users.id))
-      .where(eq(projectMembers.projectId, project.id));
+      .innerJoin(roles, eq(projectMembers.roleId, roles.id))
+      .innerJoin(rolePermissions, eq(rolePermissions.roleId, roles.id))
+      .innerJoin(permissions, eq(rolePermissions.permissionId, permissions.id))
+      .where(
+        and(
+          eq(projectMembers.projectId, project.id),
+          eq(rolePermissions.enabled, true),
+        ),
+      );
 
-    return members;
+    const rowGroup = new Map<string, GetProjectMembersDto>();
+    for (const row of rows) {
+      if (!rowGroup.has(row.userId)) {
+        rowGroup.set(row.userId, {
+          userId: row.userId,
+          projectId: row.projectId,
+          name: row.name,
+          email: row.email,
+          role: row.role,
+          joinedAt: row.joinedAt,
+          permissions: [],
+        });
+      }
+
+      rowGroup.get(row.userId)?.permissions.push(row.permissionCode);
+    }
+
+    return Array.from(rowGroup.values());
   }
 }

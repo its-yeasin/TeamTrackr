@@ -19,6 +19,7 @@ import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
 import { PermissionGuard } from 'src/common/guards/permission.guard';
 import { Permissions } from 'src/common/decorators/permissions.decorator';
 import { PERMISSION_CODES } from 'src/common/constants/permissions';
+import type { JwtPayload } from 'src/auth/strategy/jwt.strategy';
 
 @UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('projects')
@@ -56,10 +57,10 @@ export class ProjectsController {
 
   @Get()
   async getAllProjects(
-    @User() user: { id: string },
+    @User() user: JwtPayload,
     @Query() query: GetProjectDto,
   ) {
-    return await this.projectsService.getAllProjects(user.id, query);
+    return await this.projectsService.getAllProjects(user, query);
   }
 
   @Permissions(PERMISSION_CODES.PROJECT_VIEW)

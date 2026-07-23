@@ -14,12 +14,13 @@ import {
 } from 'src/database/schema';
 import { and, eq, gte, ilike, inArray, isNull, lte, or } from 'drizzle-orm';
 import { GetProjectDto } from './dto/GetProjectDto';
-import { TProjectStatus } from 'src/common/constants';
+import { SYSTEM_ROLES, TProjectStatus } from 'src/common/constants';
 import { ProjectUpdateDto } from './dto/ProjectUpdateDto';
 import {
   DEFAULT_PROJECT_ROLES,
   DEFAULT_ROLE_PERMISSIONS,
 } from './projects.constants';
+import type { JwtPayload } from 'src/auth/strategy/jwt.strategy';
 
 @Injectable()
 export class ProjectsService {
@@ -100,17 +101,28 @@ export class ProjectsService {
 
   // Get all projects
   async getAllProjects(
-    userId: string,
+    user: JwtPayload,
     query: GetProjectDto,
   ): Promise<TProject[]> {
-    const memberProjectIds = this.db
-      .select({
-        projectId: projectMembers.projectId,
-      })
-      .from(projectMembers)
-      .where(eq(projectMembers.userId, userId));
-
     const conditions = [isNull(projects.deletedAt)];
+
+    // Admins can see all projects; others only see projects they created
+    // or are a member of
+    if (user.role !== SYSTEM_ROLES.ADMIN) {
+      const memberProjectIds = this.db
+        .select({
+          projectId: projectMembers.projectId,
+        })
+        .from(projectMembers)
+        .where(eq(projectMembers.userId, user.id));
+
+      conditions.push(
+        or(
+          eq(projects.createdBy, user.id),
+          inArray(projects.id, memberProjectIds),
+        ),
+      );
+    }
 
     if (query.status) {
       conditions.push(eq(projects.status, query.status as TProjectStatus));
@@ -131,15 +143,7 @@ export class ProjectsService {
     const allProjects = await this.db
       .select()
       .from(projects)
-      .where(
-        and(
-          or(
-            eq(projects.createdBy, userId),
-            inArray(projects.id, memberProjectIds),
-          ),
-          ...conditions,
-        ),
-      );
+      .where(and(...conditions));
     return allProjects;
   }
 

@@ -163,19 +163,47 @@ export class ProjectsService {
 
   // Delete a project (soft delete)
   async deleteProject(projectId: string): Promise<void> {
-    const [existingProject] = await this.db
-      .select()
-      .from(projects)
-      .where(and(eq(projects.id, projectId)));
+    await this.db.transaction(async (tx) => {
+      // Check if the project exists
+      const [existingProject] = await tx
+        .select()
+        .from(projects)
+        .where(and(eq(projects.id, projectId)));
 
-    if (!existingProject) {
-      throw new NotFoundException('Project not found');
-    }
+      if (!existingProject) {
+        tx.rollback();
+        throw new NotFoundException('Project not found');
+      }
 
-    await this.db
-      .update(projects)
-      .set({ deletedAt: new Date() })
-      .where(eq(projects.id, projectId));
+      // remove all associated roles and role permissions
+      const projectRoles = await tx
+        .select()
+        .from(roles)
+        .where(eq(roles.projectId, projectId));
+
+      const roleIds = projectRoles.map((role) => role.id);
+
+      if (roleIds.length > 0) {
+        // remove all associated role permissions
+        await tx
+          .delete(rolePermissions)
+          .where(inArray(rolePermissions.roleId, roleIds));
+
+        // remove all associated project members
+        await tx
+          .delete(projectMembers)
+          .where(eq(projectMembers.projectId, projectId));
+
+        // remove all associated roles
+        await tx.delete(roles).where(inArray(roles.id, roleIds));
+      }
+
+      // Soft delete the project by setting the deletedAt timestamp
+      await tx
+        .update(projects)
+        .set({ deletedAt: new Date() })
+        .where(eq(projects.id, projectId));
+    });
   }
 
   // createRoles
@@ -199,11 +227,13 @@ export class ProjectsService {
 
       for (const permission of allPermissions) {
         // Check if the permission is allowed for this role
-        rolePermissionRows.push({
-          roleId: role.id,
-          permissionId: permission.id,
-          enabled: allowedPermissions.includes(permission.code),
-        });
+        if (allowedPermissions.includes(permission.code)) {
+          rolePermissionRows.push({
+            roleId: role.id,
+            permissionId: permission.id,
+            enabled: true,
+          });
+        }
       }
     }
 

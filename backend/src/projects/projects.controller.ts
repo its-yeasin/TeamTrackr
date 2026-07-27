@@ -36,9 +36,9 @@ export class ProjectsController {
   }
 
   @Permissions(PERMISSION_CODES.PROJECT_UPDATE)
-  @Put(':id')
+  @Put(':projectId')
   async updateProject(
-    @Param('id', ParseUUIDPipe) projectId: string,
+    @Param('projectId', ParseUUIDPipe) projectId: string,
     @Body() dto: ProjectUpdateDto,
   ) {
     const updatedProject = await this.projectsService.updateProject(
@@ -49,8 +49,8 @@ export class ProjectsController {
   }
 
   @Permissions(PERMISSION_CODES.PROJECT_DELETE)
-  @Delete(':id')
-  async deleteProject(@Param('id', ParseUUIDPipe) projectId: string) {
+  @Delete(':projectId')
+  async deleteProject(@Param('projectId', ParseUUIDPipe) projectId: string) {
     await this.projectsService.deleteProject(projectId);
     return { message: 'Project deleted successfully' };
   }
@@ -64,8 +64,8 @@ export class ProjectsController {
   }
 
   @Permissions(PERMISSION_CODES.PROJECT_VIEW)
-  @Get(':id')
-  async getProjectById(@Param('id', ParseUUIDPipe) projectId: string) {
+  @Get(':projectId')
+  async getProjectById(@Param('projectId', ParseUUIDPipe) projectId: string) {
     return await this.projectsService.getProjectById(projectId);
   }
 }

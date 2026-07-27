@@ -207,6 +207,19 @@ export class TasksService {
     return this.mapTaskResponse(updatedTask);
   }
 
+  async removeTask(taskId: string): Promise<void> {
+    // Check if the task exists before attempting to delete it
+    await this.getTaskById(taskId);
+
+    // Soft delete the task by setting its deletedAt timestamp
+    await this.db
+      .update(tasks)
+      .set({
+        deletedAt: new Date(),
+      })
+      .where(eq(tasks.id, taskId));
+  }
+
   /* -------Helper classes----- */
   // Validate task assignment
   private async validateTaskAssignment(

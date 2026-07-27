@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseUUIDPipe,
@@ -70,5 +71,12 @@ export class TasksController {
     @Param('memberUserId', ParseUUIDPipe) memberUserId: string,
   ) {
     return await this.tasksService.assignTaskToMember(taskId, memberUserId);
+  }
+
+  // Remove a task from a project
+  @Permissions(PERMISSION_CODES.TASK_DELETE)
+  @Delete(':taskId')
+  async removeTask(@Param('taskId', ParseUUIDPipe) taskId: string) {
+    return await this.tasksService.removeTask(taskId);
   }
 }

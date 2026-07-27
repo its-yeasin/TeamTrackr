@@ -17,7 +17,7 @@ import { AuthController } from './auth.controller';
 
         signOptions: {
           // Tokens will expire after 1 day.
-          expiresIn: '1d',
+          expiresIn: '7d',
         },
       }),
       inject: [ConfigService],

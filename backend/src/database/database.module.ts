@@ -12,7 +12,7 @@ export const DATABASE_TOKEN = 'DATABASE_TOKEN';
     {
       provide: DATABASE_TOKEN,
       useFactory(config: ConfigService) {
-        const connectionString = config.get<string>('DATABASE_URL')!;
+        const connectionString = config.get<string>('DATABASE_URL');
         const client = postgres(connectionString);
 
         return drizzle(client, {
